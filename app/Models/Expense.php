@@ -42,7 +42,7 @@ class Expense extends Model
     public function categoryLabel(Request $request): string
     {
         $locale = $request->query('locale', 'uz');
-        $allowed = ['uz', 'ru', 'kk', 'ky', 'tr', 'tg', 'uz_CYRL'];
+        $allowed = ['uz', 'ru', 'kk', 'ky', 'tr', 'uz_CYRL'];
         if (! in_array($locale, $allowed, true)) {
             $locale = 'uz';
         }

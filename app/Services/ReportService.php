@@ -28,6 +28,36 @@ class ReportService
         return $this->buildReport($shop, $from, $to);
     }
 
+    /**
+     * Har bir bo'lim uchun alohida umumiy summalar.
+     *
+     * production — faqat ishlab chiqarish: daromad, ingredient xarajati, foyda
+     * returns    — faqat vozvratlar summasi
+     * expenses   — faqat tashqi (kassa) xarajatlar summasi
+     */
+    public function summary(Shop $shop): array
+    {
+        $productions = $shop->productions()->with('breadCategory')->get();
+        $returns     = $shop->breadReturns()->get();
+        $expenses    = $shop->expenses()->get();
+
+        $prodIncome  = (float) $productions->sum(
+            fn ($p) => $p->bread_produced * (float) $p->breadCategory->selling_price
+        );
+        $prodExpense = (float) $productions->sum('ingredient_cost');
+        $prodProfit  = $prodIncome - $prodExpense;
+
+        return [
+            'production' => [
+                'income'  => round($prodIncome, 2),
+                'expense' => round($prodExpense, 2),
+                'profit'  => round($prodProfit, 2),
+            ],
+            'returns_total'    => round((float) $returns->sum('total_amount'), 2),
+            'expenses_total'   => round((float) $expenses->sum('amount'), 2),
+        ];
+    }
+
     private function buildReport(Shop $shop, string $from, string $to): array
     {
         $fromDt = Carbon::parse($from)->startOfDay();

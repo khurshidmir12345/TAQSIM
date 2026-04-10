@@ -66,6 +66,7 @@ Route::prefix('v1')->group(function () {
 
             Route::get('reports/daily', [ReportController::class, 'daily']);
             Route::get('reports/range', [ReportController::class, 'range']);
+            Route::get('reports/summary', [ReportController::class, 'summary']);
         });
     });
 });

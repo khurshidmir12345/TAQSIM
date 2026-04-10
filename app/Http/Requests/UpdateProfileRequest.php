@@ -16,7 +16,7 @@ class UpdateProfileRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255', 'unique:users,email,' . $this->user()->id],
-            'locale' => ['sometimes', 'string', 'in:uz,uz_CYRL,ru,kk,ky,tr,tg,en'],
+            'locale' => ['sometimes', 'string', 'in:uz,uz_CYRL,ru,kk,ky,tr,en'],
         ];
     }
 }

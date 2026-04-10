@@ -19,7 +19,6 @@ class SetApiLocale
         'kk',
         'ky',
         'tr',
-        'tg',
     ];
 
     public function handle(Request $request, Closure $next): Response

@@ -52,7 +52,6 @@ class BusinessType extends Model
             'kk'      => $this->name_kk ?? $this->name_ru,
             'ky'      => $this->name_ky ?? $this->name_ru,
             'tr'      => $this->name_tr ?? $this->name_uz,
-            'tg'      => $this->name_ru ?? $this->name_uz,
         ];
 
         return $map[$locale] ?? $this->name_uz;

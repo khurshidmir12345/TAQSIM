@@ -27,7 +27,6 @@ class BusinessTypeResource extends JsonResource
                 'kk'      => $this->name_kk,
                 'ky'      => $this->name_ky,
                 'tr'      => $this->name_tr,
-                'tg'      => $this->name_ru,
             ],
             'terminology' => $this->terminology,
         ];
@@ -35,7 +34,7 @@ class BusinessTypeResource extends JsonResource
 
     private function detectLocale(string $header): string
     {
-        $supported = ['uz', 'uz_CYRL', 'ru', 'kk', 'ky', 'tr', 'tg'];
+        $supported = ['uz', 'uz_CYRL', 'ru', 'kk', 'ky', 'tr'];
         $lang = strtolower(explode(',', explode(';', $header)[0])[0]);
         $lang = str_replace('-', '_', $lang);
         return in_array($lang, $supported) ? $lang : 'uz';

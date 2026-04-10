@@ -39,4 +39,13 @@ class ReportController extends BaseShopController
 
         return $this->success(['report' => $report]);
     }
+
+    public function summary(Request $request, Shop $shop): JsonResponse
+    {
+        $this->authorizeShop($request, $shop);
+
+        $summary = $this->reportService->summary($shop);
+
+        return $this->success(['summary' => $summary]);
+    }
 }

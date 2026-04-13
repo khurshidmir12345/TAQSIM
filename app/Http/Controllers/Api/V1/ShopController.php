@@ -8,6 +8,7 @@ use App\Http\Requests\StoreShopRequest;
 use App\Http\Requests\UpdateShopRequest;
 use App\Http\Resources\ShopResource;
 use App\Models\CustomBusinessType;
+use App\Models\Currency;
 use App\Models\Shop;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,9 +31,13 @@ class ShopController extends Controller
 
     public function store(StoreShopRequest $request): JsonResponse
     {
+        $currencyId = $request->currency_id
+            ?? Currency::where('code', 'UZS')->value('id')
+            ?? Currency::first()?->id;
+
         $shop = Shop::create([
             'business_type_id' => $request->business_type_id,
-            'currency_id'      => $request->currency_id,
+            'currency_id'      => $currencyId,
             'name'             => $request->name,
             'slug'             => Str::slug($request->name) . '-' . Str::random(5),
             'description'      => $request->description,
@@ -46,10 +51,11 @@ class ShopController extends Controller
             'user_type' => ShopUserType::Owner,
         ]);
 
-        // "Boshqa" kategoriya uchun custom nomi saqlash
+        // "Boshqa" kategoriya uchun custom nomi user_id bilan saqlash
         if ($request->filled('custom_business_type_name')) {
             CustomBusinessType::create([
                 'shop_id' => $shop->id,
+                'user_id' => $request->user()->id,
                 'name'    => $request->custom_business_type_name,
             ]);
         }

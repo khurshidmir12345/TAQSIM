@@ -3,16 +3,19 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BreadCategoryController;
 use App\Http\Controllers\Api\V1\BusinessTypeController;
+use App\Http\Controllers\Api\V1\CustomBusinessTypeController;
 use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\IngredientController;
 use App\Http\Controllers\Api\V1\MeasurementUnitController;
+use App\Http\Controllers\Api\V1\OnboardingController;
 use App\Http\Controllers\Api\V1\ProductionController;
 use App\Http\Controllers\Api\V1\RecipeController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\ReturnController;
 use App\Http\Controllers\Api\V1\ShopController;
+use App\Http\Controllers\Api\V1\SystemLinkController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
@@ -32,6 +35,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/measurement-units/ingredient',[MeasurementUnitController::class, 'ingredient']);
     Route::get('/measurement-units/batch',     [MeasurementUnitController::class, 'batch']);
     Route::get('/currencies',                  [CurrencyController::class, 'index']);
+    Route::get('/system-links',                [SystemLinkController::class, 'index']);
 
     // ── Auth (public) ──────────────────────────────────────────────
     Route::middleware('throttle:auth')->group(function () {
@@ -52,6 +56,10 @@ Route::prefix('v1')->group(function () {
         // ── Shops ──────────────────────────────────────────────────
         Route::apiResource('shops', ShopController::class);
 
+        // ── Custom Business Types (admin statistika + promote) ──────
+        Route::get('/custom-business-types',          [CustomBusinessTypeController::class, 'index']);
+        Route::post('/custom-business-types/promote', [CustomBusinessTypeController::class, 'promote']);
+
         Route::prefix('shops/{shop}')->group(function () {
             Route::apiResource('bread-categories', BreadCategoryController::class);
             Route::apiResource('ingredients',      IngredientController::class);
@@ -64,9 +72,12 @@ Route::prefix('v1')->group(function () {
             Route::get('expense-categories', [ExpenseCategoryController::class, 'index']);
             Route::post('expense-categories', [ExpenseCategoryController::class, 'store']);
 
-            Route::get('reports/daily', [ReportController::class, 'daily']);
-            Route::get('reports/range', [ReportController::class, 'range']);
+            Route::get('reports/daily',   [ReportController::class, 'daily']);
+            Route::get('reports/range',   [ReportController::class, 'range']);
             Route::get('reports/summary', [ReportController::class, 'summary']);
+
+            // Tutorial / Onboarding status
+            Route::get('onboarding-status', [OnboardingController::class, 'status']);
         });
     });
 });

@@ -11,16 +11,19 @@ use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\OtpService;
+use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly OtpService $otpService) {}
+    public function __construct(
+        private readonly OtpService $otpService,
+        private readonly SmsService $smsService,
+    ) {}
 
     /**
      * POST /v1/auth/send-code
@@ -34,21 +37,17 @@ class AuthController extends Controller
 
         $record = $this->otpService->generate($phone);
 
-        $response = [
-            'phone_exists' => $phoneExists,
-            'expires_in'   => 120,
-        ];
-
-        // Debug: return code only in local/testing env — replace with SMS in production
-        if (App::isLocal() || App::environment('testing')) {
-            $response['debug_code'] = $record->code;
-        }
+        // Send OTP via SMS (direct, no queue)
+        $this->smsService->sendOtp($phone, $record->code);
 
         $message = $phoneExists
             ? __('api.auth.send_code_phone_exists')
             : __('api.auth.send_code_new');
 
-        return $this->success($response, $message);
+        return $this->success([
+            'phone_exists' => $phoneExists,
+            'expires_in'   => 120,
+        ], $message);
     }
 
     /**

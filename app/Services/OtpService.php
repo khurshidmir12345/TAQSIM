@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class OtpService
 {
-    private const CODE_LENGTH   = 6;
+    private const CODE_LENGTH   = 4;
     private const EXPIRES_MIN   = 2;
     private const MAX_ATTEMPTS  = 5;
     private const RESEND_SEC    = 60;
@@ -37,7 +37,7 @@ class OtpService
             ->whereNull('verified_at')
             ->delete();
 
-        $code = str_pad((string) random_int(0, 999999), self::CODE_LENGTH, '0', STR_PAD_LEFT);
+        $code = str_pad((string) random_int(0, 9999), self::CODE_LENGTH, '0', STR_PAD_LEFT);
 
         return PhoneVerificationCode::create([
             'phone'      => $phone,

@@ -10,10 +10,15 @@ class CustomBusinessType extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['shop_id', 'name'];
+    protected $fillable = ['shop_id', 'user_id', 'name'];
 
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

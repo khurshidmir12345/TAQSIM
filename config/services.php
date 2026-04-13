@@ -14,6 +14,11 @@ return [
     |
     */
 
+    'devsms' => [
+        'token' => env('DEVSMS_TOKEN'),
+        'from'  => env('DEVSMS_FROM', '4546'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

@@ -15,7 +15,7 @@ class StoreShopRequest extends FormRequest
     {
         return [
             'business_type_id'         => ['required', 'uuid', 'exists:business_types,id'],
-            'currency_id'              => ['required', 'uuid', 'exists:currencies,id'],
+            'currency_id'              => ['nullable', 'uuid', 'exists:currencies,id'],
             'custom_business_type_name'=> ['nullable', 'string', 'max:100'],
             'ingredient_unit_ids'      => ['nullable', 'array'],
             'ingredient_unit_ids.*'    => ['uuid', 'exists:measurement_units,id'],

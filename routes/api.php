@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BreadCategoryController;
 use App\Http\Controllers\Api\V1\BusinessTypeController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\ReturnController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Controllers\Api\V1\SystemLinkController;
+use App\Http\Controllers\Api\V1\TelegramAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
@@ -26,7 +28,14 @@ Route::get('/ping', function () {
     ]);
 });
 
+// ── Telegram Webhook (outside v1, no auth) ──────────────────────────
+Route::post('/telegram/webhook/{botToken}', [TelegramWebhookController::class, 'handle']);
+
 Route::prefix('v1')->group(function () {
+
+    // ── Telegram Auth (public) ──────────────────────────────────────────
+    Route::post('/auth/telegram/session',            [TelegramAuthController::class, 'createSession']);
+    Route::get('/auth/telegram/check/{sessionToken}', [TelegramAuthController::class, 'checkSession']);
 
     // ── Business Types & Measurement Units (public — needed before auth for shop wizard) ──
     Route::get('/business-types',              [BusinessTypeController::class, 'index']);

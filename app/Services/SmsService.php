@@ -23,7 +23,7 @@ class SmsService
      */
     public function sendOtp(string $phone, string $code): bool
     {
-        $message = "TAQSEEM ilovasiga kirish uchun bir martalik kod: {$code}";
+        $message = "TAQSEEM ilovasiga kirish uchun bir martalik code: {$code}";
 
         return $this->send($phone, $message);
     }

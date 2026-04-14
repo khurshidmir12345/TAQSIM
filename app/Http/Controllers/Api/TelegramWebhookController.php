@@ -124,6 +124,8 @@ class TelegramWebhookController extends Controller
             ]);
         }
 
+        $appRedirectUrl = config('app.url') . '/auth/app-redirect';
+
         $this->telegram->sendWithInlineButton(
             $bot->token,
             $chatId,
@@ -131,7 +133,7 @@ class TelegramWebhookController extends Controller
             . "Siz tizimga kirdingiz. Endi ilovaga qaytishingiz mumkin.\n\n"
             . "Pastdagi tugmani bosing \u{1F447}",
             "\u{1F4F2} Ilovaga qaytish",
-            'taqseem://auth/callback',
+            $appRedirectUrl,
         );
     }
 }

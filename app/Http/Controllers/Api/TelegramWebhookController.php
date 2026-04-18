@@ -125,6 +125,9 @@ class TelegramWebhookController extends Controller
         }
 
         $appRedirectUrl = config('app.url') . '/auth/app-redirect';
+        if ($session) {
+            $appRedirectUrl .= '?session=' . urlencode($session->session_token);
+        }
 
         $this->telegram->sendWithInlineButton(
             $bot->token,

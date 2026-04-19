@@ -22,7 +22,12 @@ class StoreRecipeRequest extends FormRequest
                 'required',
                 'uuid',
                 Rule::exists('bread_categories', 'id')->where('shop_id', $shop->id),
-                Rule::unique('recipes', 'bread_category_id')->where('shop_id', $shop->id),
+                // Faqat aktiv (soft-deleted bo'lmagan) retseptlar orasida takrorlanishni
+                // taqiqlaymiz. Foydalanuvchi o'chirgan retsept yangi yaratishga to'siq
+                // bo'lmasligi kerak.
+                Rule::unique('recipes', 'bread_category_id')
+                    ->where('shop_id', $shop->id)
+                    ->whereNull('deleted_at'),
             ],
             'measurement_unit_id' => [
                 'required',

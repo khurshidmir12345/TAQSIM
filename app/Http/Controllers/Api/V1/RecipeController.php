@@ -40,6 +40,14 @@ class RecipeController extends BaseShopController
         $data['ingredients'] = $uniqueIngredients;
 
         $recipe = DB::transaction(function () use ($shop, $data) {
+            // Agar shu `bread_category_id` uchun ilgari soft-deleted retsept bor
+            // bo'lsa — uni butunlay tozalaymiz. Shunda DB'da orfan yozuvlar
+            // qolib ketmaydi va kelajakdagi tekshiruvlar toza bo'ladi.
+            $this->purgeTrashedRecipesFor(
+                shopId: $shop->id,
+                breadCategoryId: $data['bread_category_id'],
+            );
+
             $recipe = $shop->recipes()->create([
                 'name' => $data['name'],
                 'bread_category_id' => $data['bread_category_id'],
@@ -109,5 +117,25 @@ class RecipeController extends BaseShopController
         $recipe->delete();
 
         return $this->deleted();
+    }
+
+    /**
+     * Belgilangan do'kon va mahsulot turi bo'yicha soft-deleted retseptlarni
+     * (va ularga tegishli `recipe_ingredients` yozuvlarini) butunlay o'chiradi.
+     *
+     * Foydalanuvchi retseptni o'chirib, o'sha `bread_category_id` uchun qayta
+     * yaratganida DB toza qolishi uchun chaqiriladi.
+     */
+    private function purgeTrashedRecipesFor(string $shopId, string $breadCategoryId): void
+    {
+        $trashed = Recipe::onlyTrashed()
+            ->where('shop_id', $shopId)
+            ->where('bread_category_id', $breadCategoryId)
+            ->get();
+
+        foreach ($trashed as $old) {
+            $old->recipeIngredients()->delete();
+            $old->forceDelete();
+        }
     }
 }

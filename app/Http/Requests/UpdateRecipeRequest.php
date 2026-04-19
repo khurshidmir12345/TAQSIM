@@ -23,8 +23,12 @@ class UpdateRecipeRequest extends FormRequest
                 'sometimes',
                 'uuid',
                 Rule::exists('bread_categories', 'id')->where('shop_id', $shop->id),
+                // Joriy retseptni istisno qilamiz va soft-deleted yozuvlarni
+                // tekshiruvdan chiqaramiz — aks holda o'chirilgan eski retsept
+                // yangilashga to'siq bo'lishi mumkin.
                 Rule::unique('recipes', 'bread_category_id')
                     ->where('shop_id', $shop->id)
+                    ->whereNull('deleted_at')
                     ->ignore($recipe->id),
             ],
             'measurement_unit_id' => [

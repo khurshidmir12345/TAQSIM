@@ -34,6 +34,7 @@ return [
         'login_success' => 'Giriş yaptınız.',
         'profile_updated' => 'Profil güncellendi.',
         'avatar_updated' => 'Avatar güncellendi.',
+        'avatar_removed' => 'Avatar kaldırıldı.',
         'password_changed' => 'Şifre değiştirildi.',
         'account_deleted' => 'Hesap silindi.',
         'logout_success' => 'Çıkış yaptınız.',

@@ -34,6 +34,7 @@ return [
         'login_success' => 'Tizimga kirdingiz.',
         'profile_updated' => 'Profil yangilandi.',
         'avatar_updated' => 'Avatar yangilandi.',
+        'avatar_removed' => 'Avatar olib tashlandi.',
         'password_changed' => 'Parol o‘zgartirildi.',
         'account_deleted' => 'Hisob o‘chirildi.',
         'logout_success' => 'Tizimdan chiqdingiz.',

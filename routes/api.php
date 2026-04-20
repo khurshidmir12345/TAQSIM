@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me',            [AuthController::class, 'me']);
         Route::put('/auth/profile',       [AuthController::class, 'updateProfile']);
         Route::post('/auth/avatar',       [AuthController::class, 'uploadAvatar']);
+        Route::delete('/auth/avatar',     [AuthController::class, 'deleteAvatar']);
         Route::put('/auth/password',      [AuthController::class, 'changePassword']);
         Route::delete('/auth/account',    [AuthController::class, 'deleteAccount']);
         Route::post('/auth/logout',       [AuthController::class, 'logout']);

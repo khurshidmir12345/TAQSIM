@@ -4,6 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class UserResource extends JsonResource
 {
@@ -19,11 +21,31 @@ class UserResource extends JsonResource
             'google_id' => $this->google_id,
             'balance' => $this->balance,
             'is_accepted_policy' => $this->is_accepted_policy,
-            'avatar_url' => $this->avatar_url,
+            'avatar_url' => $this->resolveAvatarUrl(),
             'locale' => $this->locale,
             'email_verified_at' => $this->email_verified_at,
             'phone_verified_at' => $this->phone_verified_at,
             'created_at' => $this->created_at,
         ];
+    }
+
+    /**
+     * Avatar URL'ini normalizatsiya qiladi.
+     * - Bo'sh bo'lsa: null.
+     * - To'liq URL (http/https) bo'lsa (masalan OAuth provider avatar): o'zgarishsiz.
+     * - Aks holda public disk'dagi path sifatida to'liq URL'ga aylantiriladi.
+     */
+    private function resolveAvatarUrl(): ?string
+    {
+        $value = $this->avatar_url;
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+
+        if (Str::startsWith($value, ['http://', 'https://'])) {
+            return $value;
+        }
+
+        return Storage::disk('public')->url($value);
     }
 }

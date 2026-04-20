@@ -34,6 +34,7 @@ return [
         'login_success' => 'Тизимга кирдингиз.',
         'profile_updated' => 'Профил янгиланди.',
         'avatar_updated' => 'Аватар янгиланди.',
+        'avatar_removed' => 'Аватар олиб ташланди.',
         'password_changed' => 'Парол ўзгартирилди.',
         'account_deleted' => 'Ҳисоб ўчирилди.',
         'logout_success' => 'Тизимдан чиқдингиз.',

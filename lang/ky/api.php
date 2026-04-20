@@ -34,6 +34,7 @@ return [
         'login_success' => 'Системага кирдиңиз.',
         'profile_updated' => 'Профиль жаңыланды.',
         'avatar_updated' => 'Аватар жаңыланды.',
+        'avatar_removed' => 'Аватар өчүрүлдү.',
         'password_changed' => 'Сырсөз өзгөртүлдү.',
         'account_deleted' => 'Аккаунт өчүрүлдү.',
         'logout_success' => 'Системадан чыктыңыз.',

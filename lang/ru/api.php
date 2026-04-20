@@ -34,6 +34,7 @@ return [
         'login_success' => 'Вы вошли в систему.',
         'profile_updated' => 'Профиль обновлён.',
         'avatar_updated' => 'Аватар обновлён.',
+        'avatar_removed' => 'Аватар удалён.',
         'password_changed' => 'Пароль изменён.',
         'account_deleted' => 'Аккаунт удалён.',
         'logout_success' => 'Вы вышли из системы.',

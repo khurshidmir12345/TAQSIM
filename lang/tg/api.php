@@ -34,6 +34,7 @@ return [
         'login_success' => 'Шумо ворид шудед.',
         'profile_updated' => 'Профил навсозӣ шуд.',
         'avatar_updated' => 'Аватар навсозӣ шуд.',
+        'avatar_removed' => 'Аватар ҳазф шуд.',
         'password_changed' => 'Парол иваз шуд.',
         'account_deleted' => 'Ҳисоб нест шуд.',
         'logout_success' => 'Шумо баромадед.',

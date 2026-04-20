@@ -148,7 +148,8 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        if ($user->avatar_url) {
+        // Eski faqat local public disk'dagi fayl bo'lsa tozalaymiz (OAuth URL'lar emas).
+        if ($user->avatar_url && !str_starts_with($user->avatar_url, 'http')) {
             Storage::disk('public')->delete($user->avatar_url);
         }
 
@@ -158,6 +159,24 @@ class AuthController extends Controller
         return $this->success([
             'user' => new UserResource($user->fresh()),
         ], __('api.auth.avatar_updated'));
+    }
+
+    /**
+     * DELETE /v1/auth/avatar
+     */
+    public function deleteAvatar(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar_url && !str_starts_with($user->avatar_url, 'http')) {
+            Storage::disk('public')->delete($user->avatar_url);
+        }
+
+        $user->update(['avatar_url' => null]);
+
+        return $this->success([
+            'user' => new UserResource($user->fresh()),
+        ], __('api.auth.avatar_removed'));
     }
 
     /**

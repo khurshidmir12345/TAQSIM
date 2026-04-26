@@ -49,6 +49,28 @@ class MeasurementUnitController extends Controller
     }
 
     /**
+     * GET /v1/measurement-units/product
+     *
+     * Mahsulotlar uchun 4 ta o'lchov birligi: Dona, Kilogram, Litr, Metr.
+     * Xom ashyo bilan bir xil jadvalni qayta ishlatamiz (DRY) — chunki
+     * mantiq bir xil: shu 4 birlik universal ishlab chiqaruvchi uchun yetarli.
+     */
+    public function product(): JsonResponse
+    {
+        $allowed = ['ta', 'kg', 'l', 'm'];
+        $units = MeasurementUnit::active()
+            ->ingredient()
+            ->whereIn('code', $allowed)
+            ->orderByRaw("FIELD(code, 'ta', 'kg', 'l', 'm')")
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => MeasurementUnitResource::collection($units),
+        ]);
+    }
+
+    /**
      * GET /v1/measurement-units/batch
      */
     public function batch(): JsonResponse

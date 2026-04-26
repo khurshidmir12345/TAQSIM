@@ -42,6 +42,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/business-types/{key}',        [BusinessTypeController::class, 'show']);
     Route::get('/measurement-units',           [MeasurementUnitController::class, 'index']);
     Route::get('/measurement-units/ingredient',[MeasurementUnitController::class, 'ingredient']);
+    Route::get('/measurement-units/product',   [MeasurementUnitController::class, 'product']);
     Route::get('/measurement-units/batch',     [MeasurementUnitController::class, 'batch']);
     Route::get('/currencies',                  [CurrencyController::class, 'index']);
     Route::get('/system-links',                [SystemLinkController::class, 'index']);

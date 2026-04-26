@@ -18,6 +18,10 @@ class BreadCategoryResource extends JsonResource
             'currency' => $this->currency
                 ? new CurrencyResource($this->currency)
                 : null,
+            'measurement_unit_id' => $this->measurement_unit_id,
+            'measurement_unit' => $this->measurementUnit
+                ? new MeasurementUnitResource($this->measurementUnit)
+                : null,
             'image_url' => $this->image_url,
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,

@@ -17,6 +17,7 @@ class StoreBreadCategoryRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'selling_price' => ['required', 'numeric', 'min:0'],
             'currency_id' => ['nullable', 'uuid', 'exists:currencies,id'],
+            'measurement_unit_id' => ['nullable', 'uuid', 'exists:measurement_units,id'],
             'image_url' => ['nullable', 'string', 'max:2048'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];

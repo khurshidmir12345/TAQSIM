@@ -18,6 +18,7 @@ class BreadCategory extends Model
         'name',
         'selling_price',
         'currency_id',
+        'measurement_unit_id',
         'image_url',
         'sort_order',
         'is_active',
@@ -40,6 +41,11 @@ class BreadCategory extends Model
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);
+    }
+
+    public function measurementUnit(): BelongsTo
+    {
+        return $this->belongsTo(MeasurementUnit::class);
     }
 
     public function recipes(): HasMany

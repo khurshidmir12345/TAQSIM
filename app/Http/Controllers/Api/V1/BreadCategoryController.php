@@ -17,7 +17,7 @@ class BreadCategoryController extends BaseShopController
     {
         $this->authorizeShop($request, $shop);
 
-        $query = $shop->breadCategories()->getQuery()->with('currency');
+        $query = $shop->breadCategories()->getQuery()->with(['currency', 'measurementUnit']);
 
         $this->applyFilters($query, $request, ['is_active']);
         $this->applySorting($query, $request, 'sort_order', 'asc');
@@ -45,9 +45,15 @@ class BreadCategoryController extends BaseShopController
             $data['currency_id'] = $shop->currency_id
                 ?? Currency::query()->where('code', 'UZS')->value('id');
         }
+        if (empty($data['measurement_unit_id'])) {
+            $data['measurement_unit_id'] = \App\Models\MeasurementUnit::query()
+                ->where('type', 'ingredient')
+                ->where('code', 'ta')
+                ->value('id');
+        }
 
         $category = $shop->breadCategories()->create($data);
-        $category->load('currency');
+        $category->load(['currency', 'measurementUnit']);
 
         return $this->created([
             'bread_category' => new BreadCategoryResource($category),
@@ -58,7 +64,7 @@ class BreadCategoryController extends BaseShopController
     {
         $this->authorizeShop($request, $shop);
 
-        $breadCategory->loadMissing('currency');
+        $breadCategory->loadMissing(['currency', 'measurementUnit']);
 
         return $this->success([
             'bread_category' => new BreadCategoryResource($breadCategory),
@@ -72,7 +78,7 @@ class BreadCategoryController extends BaseShopController
         $breadCategory->update($request->validated());
 
         return $this->success([
-            'bread_category' => new BreadCategoryResource($breadCategory->fresh(['currency'])),
+            'bread_category' => new BreadCategoryResource($breadCategory->fresh(['currency', 'measurementUnit'])),
         ], __('api.updated'));
     }
 

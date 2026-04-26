@@ -24,6 +24,7 @@ Route::get('/auth/app-redirect', function (Request $request) {
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="refresh" content="0;url={$deepLinkHtml}">
         <title>TAQSEEM</title>
         <style>
             * { box-sizing: border-box; }
@@ -53,14 +54,22 @@ Route::get('/auth/app-redirect', function (Request $request) {
     <body>
         <div class="card">
             <h2>TAQSEEM</h2>
-            <p>Ilovaga qaytish uchun pastdagi tugmani bosing.</p>
-            <a class="btn" href="{$deepLinkHtml}">Ilovani ochish</a>
+            <p>Ilovaga qaytmoqda…</p>
+            <a class="btn" id="open-app" href="{$deepLinkHtml}">Ilovani ochish</a>
             <div class="mini">Agar ilova ochilmasa, qurilmangizda TAQSEEM ilovasi o'rnatilganiga ishonch hosil qiling.</div>
         </div>
         <script>
             (function() {
                 var link = {$deepLinkJs};
-                setTimeout(function() { window.location.href = link; }, 80);
+                // 1) darhol redirect — eng tez yo'l
+                window.location.replace(link);
+                // 2) zaxira — ba'zi brauzerlar replace'ni bloklashi mumkin
+                setTimeout(function() { window.location.href = link; }, 250);
+                // 3) oxirgi chora — foydalanuvchi uchun ko'rinadigan tugma
+                setTimeout(function() {
+                    var btn = document.getElementById('open-app');
+                    if (btn) btn.click();
+                }, 1500);
             })();
         </script>
     </body>

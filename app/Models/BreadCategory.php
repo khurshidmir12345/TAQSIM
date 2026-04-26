@@ -56,4 +56,21 @@ class BreadCategory extends Model
     {
         return $this->hasMany(BreadReturn::class);
     }
+
+    /**
+     * Mahsulot o'chirilganda unga tegishli retseptlarni ham soft-delete qilamiz.
+     * Retsept aynan shu mahsulot uchun yaratilgani sababli, mahsulotsiz retsept
+     * mantiqqa zid. Productions/returns tarixiy ma'lumot — tegmaymiz.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (BreadCategory $category): void {
+            if ($category->isForceDeleting()) {
+                return;
+            }
+            $category->recipes()->get()->each(
+                fn (Recipe $recipe) => $recipe->delete()
+            );
+        });
+    }
 }

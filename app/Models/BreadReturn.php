@@ -39,9 +39,14 @@ class BreadReturn extends Model
         return $this->belongsTo(Shop::class);
     }
 
+    /**
+     * Vozvratlar tarixiy ma'lumot — bog'liq mahsulot soft-delete
+     * qilinsa ham, qaytarish yozuvi o'z konteksti bilan ko'rinishi
+     * kerak. Shu sababli `withTrashed()` ishlatamiz.
+     */
     public function breadCategory(): BelongsTo
     {
-        return $this->belongsTo(BreadCategory::class);
+        return $this->belongsTo(BreadCategory::class)->withTrashed();
     }
 
     public function production(): BelongsTo

@@ -35,9 +35,14 @@ class Recipe extends Model
         return $this->belongsTo(Shop::class);
     }
 
+    /**
+     * Retsept ushbu mahsulot uchun yaratilgan. Mahsulot soft-delete bo'lsa
+     * ham, tarixiy ma'lumot (productions) retsept va uning mahsulotini
+     * to'g'ri ko'rsatishi kerak — `withTrashed()` qo'shamiz.
+     */
     public function breadCategory(): BelongsTo
     {
-        return $this->belongsTo(BreadCategory::class);
+        return $this->belongsTo(BreadCategory::class)->withTrashed();
     }
 
     public function measurementUnit(): BelongsTo

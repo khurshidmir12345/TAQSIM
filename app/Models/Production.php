@@ -39,14 +39,19 @@ class Production extends Model
         return $this->belongsTo(Shop::class);
     }
 
+    /**
+     * Productions tarixiy ma'lumot — retsept yoki mahsulot soft-delete
+     * qilinsa ham, ushbu ishlab chiqarish yozuvi o'z konteksti bilan
+     * ko'rinishi kerak. Shu sababli `withTrashed()` ishlatamiz.
+     */
     public function recipe(): BelongsTo
     {
-        return $this->belongsTo(Recipe::class);
+        return $this->belongsTo(Recipe::class)->withTrashed();
     }
 
     public function breadCategory(): BelongsTo
     {
-        return $this->belongsTo(BreadCategory::class);
+        return $this->belongsTo(BreadCategory::class)->withTrashed();
     }
 
     public function creator(): BelongsTo

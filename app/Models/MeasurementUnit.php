@@ -13,6 +13,7 @@ class MeasurementUnit extends Model
     /** Partiya / partiya hajmi birliklari — retsept va do‘kon sozlamalari. */
     public const BATCH_UNIT_CODES = [
         'qop', 'kg_batch', 'blok', 'bolim', 'toplam', 'quti', 'km', 'ton', 'm3',
+        'dona_batch', 'l_batch', 'm_batch', 'qozon',
     ];
 
     protected $fillable = [

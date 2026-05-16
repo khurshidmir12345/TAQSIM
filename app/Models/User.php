@@ -32,6 +32,7 @@ class User extends Authenticatable implements FilamentUser
         'telegram_chat_id',
         'telegram_username',
         'google_id',
+        'apple_id',
         'balance',
         'is_accepted_policy',
         'avatar_url',

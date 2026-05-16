@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\TelegramWebhookController;
+use App\Http\Controllers\Api\V1\AppleAuthController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BreadCategoryController;
 use App\Http\Controllers\Api\V1\BusinessTypeController;
@@ -52,6 +53,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/send-code', [AuthController::class, 'sendCode']);
         Route::post('/auth/register',  [AuthController::class, 'register']);
         Route::post('/auth/login',     [AuthController::class, 'login']);
+        Route::post('/auth/apple',     [AppleAuthController::class, 'login']);
     });
 
     // ── Auth (protected) ───────────────────────────────────────────

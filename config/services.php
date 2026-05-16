@@ -40,4 +40,17 @@ return [
         ],
     ],
 
+    'apple' => [
+        /*
+        |--------------------------------------------------------------------
+        | Sign in with Apple
+        |--------------------------------------------------------------------
+        | iOS app bundle identifier(lar) — vergul bilan ajratib bir nechta
+        | qiymat berish mumkin (development va production uchun).
+        */
+        'client_ids' => array_filter(array_map('trim', explode(',', env('APPLE_CLIENT_IDS', 'uz.taqseem.app')))),
+        'jwks_url'   => env('APPLE_JWKS_URL', 'https://appleid.apple.com/auth/keys'),
+        'issuer'     => env('APPLE_ISSUER', 'https://appleid.apple.com'),
+    ],
+
 ];

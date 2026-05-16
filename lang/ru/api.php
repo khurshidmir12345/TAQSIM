@@ -38,6 +38,8 @@ return [
         'password_changed' => 'Пароль изменён.',
         'account_deleted' => 'Аккаунт удалён.',
         'logout_success' => 'Вы вышли из системы.',
+        'apple_invalid_token' => 'Apple identity token недействителен или истёк.',
+        'apple_login_success' => 'Вы вошли через Apple ID.',
     ],
 
     'shop' => [

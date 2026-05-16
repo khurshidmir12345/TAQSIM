@@ -38,6 +38,8 @@ return [
         'password_changed' => 'Parol o‘zgartirildi.',
         'account_deleted' => 'Hisob o‘chirildi.',
         'logout_success' => 'Tizimdan chiqdingiz.',
+        'apple_invalid_token' => 'Apple identifikatsiya tokeni yaroqsiz yoki muddati o‘tgan.',
+        'apple_login_success' => 'Apple ID orqali tizimga kirdingiz.',
     ],
 
     'shop' => [

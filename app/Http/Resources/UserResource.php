@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'telegram_chat_id' => $this->telegram_chat_id,
             'telegram_username' => $this->telegram_username,
             'google_id' => $this->google_id,
+            'apple_id' => $this->apple_id,
             'balance' => $this->balance,
             'is_accepted_policy' => $this->is_accepted_policy,
             'avatar_url' => $this->resolveAvatarUrl(),

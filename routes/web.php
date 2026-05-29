@@ -1,10 +1,23 @@
 <?php
 
+use App\Http\Controllers\Web\AccountDeletionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+// ── Account Deletion (public — Google Play / App Store compliance) ──
+// Foydalanuvchi ilova o'rnatmasdan o'z akkauntini o'chira oladi.
+Route::get('/delete-account',  [AccountDeletionController::class, 'show'])
+    ->name('account.delete.show');
+
+Route::middleware('throttle:6,1')->group(function () {
+    Route::post('/delete-account/send-code', [AccountDeletionController::class, 'sendCode'])
+        ->name('account.delete.sendCode');
+    Route::post('/delete-account/confirm',   [AccountDeletionController::class, 'confirm'])
+        ->name('account.delete.confirm');
 });
 
 Route::get('/auth/app-redirect', function (Request $request) {

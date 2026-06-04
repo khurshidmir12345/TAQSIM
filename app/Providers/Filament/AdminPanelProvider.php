@@ -2,15 +2,20 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\LatestShopsWidget;
+use App\Filament\Widgets\LatestUsersWidget;
+use App\Filament\Widgets\ProductionChartWidget;
+use App\Filament\Widgets\StatsOverviewWidget;
+use App\Filament\Widgets\UsersChartWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -27,8 +32,18 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName('Taqseem Admin')
+            ->favicon(asset('favicon.ico'))
             ->colors([
-                'primary' => Color::Blue,
+                'primary' => Color::hex('#0B3C5D'),
+                'info' => Color::hex('#00A896'),
+            ])
+            ->sidebarCollapsibleOnDesktop()
+            ->navigationGroups([
+                NavigationGroup::make('Boshqaruv'),
+                NavigationGroup::make('Operatsiyalar'),
+                NavigationGroup::make('Katalog'),
+                NavigationGroup::make('Tizim'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -37,7 +52,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
+                StatsOverviewWidget::class,
+                ProductionChartWidget::class,
+                UsersChartWidget::class,
+                LatestShopsWidget::class,
+                LatestUsersWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

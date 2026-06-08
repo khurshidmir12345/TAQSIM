@@ -59,10 +59,21 @@ class TelegramWebhookController extends Controller
         $sessionToken = $parts[1] ?? null;
 
         if ($sessionToken) {
-            TelegramAuthSession::where('session_token', $sessionToken)
+            $session = TelegramAuthSession::where('session_token', $sessionToken)
                 ->where('status', 'pending')
                 ->where('expires_at', '>', now())
-                ->update(['telegram_chat_id' => $chatId]);
+                ->first();
+
+            // Connect oqimi: mavjud foydalanuvchiga bog'lash (telefon so'ralmaydi).
+            if ($session && $session->type === 'connect') {
+                $this->handleConnect($bot, $chatId, $session, $message);
+
+                return;
+            }
+
+            if ($session) {
+                $session->update(['telegram_chat_id' => $chatId]);
+            }
         }
 
         $firstName = $message['from']['first_name'] ?? 'Foydalanuvchi';
@@ -73,6 +84,65 @@ class TelegramWebhookController extends Controller
             "Assalomu alaykum, {$firstName}! \u{1F44B}\n\n"
             . "\u{1F4F2} <b>TAQSEEM</b> ilovasiga kirish uchun telefon raqamingizni yuboring.\n\n"
             . "Pastdagi tugmani bosing \u{1F447}",
+        );
+    }
+
+    /**
+     * Connect oqimi: mavjud foydalanuvchiga Telegram hisobini bog'laydi.
+     * Yangi hisob ochmaydi va token bermaydi — faqat telegram_chat_id va
+     * username'ni sessiya egasiga yozadi.
+     */
+    private function handleConnect(SystemBot $bot, int $chatId, TelegramAuthSession $session, array $message): void
+    {
+        $user = $session->user;
+
+        if (! $user) {
+            $session->update(['status' => 'failed']);
+            $this->telegram->sendMessage(
+                $bot->token,
+                $chatId,
+                "\u{274C} Foydalanuvchi topilmadi. Iltimos, ilovadan qaytadan urinib ko'ring.",
+            );
+
+            return;
+        }
+
+        // Bu Telegram hisobi boshqa foydalanuvchiga bog'langan bo'lsa — rad etamiz.
+        $conflict = User::where('telegram_chat_id', $chatId)
+            ->where('id', '!=', $user->id)
+            ->first();
+
+        if ($conflict) {
+            $session->update(['status' => 'failed']);
+            $this->telegram->sendMessage(
+                $bot->token,
+                $chatId,
+                "\u{26A0}\u{FE0F} <b>Diqqat!</b>\n\n"
+                . "Bu Telegram hisobi allaqachon boshqa TAQSEEM foydalanuvchisiga bog'langan.",
+            );
+
+            return;
+        }
+
+        $telegramUsername = $message['from']['username'] ?? null;
+
+        $user->update([
+            'telegram_chat_id' => $chatId,
+            'telegram_username' => $telegramUsername,
+        ]);
+
+        $session->update([
+            'telegram_chat_id' => $chatId,
+            'status' => 'completed',
+        ]);
+
+        $this->telegram->sendMessage(
+            $bot->token,
+            $chatId,
+            "\u{2705} <b>Muvaffaqiyatli ulandi!</b>\n\n"
+            . "Telegram hisobingiz <b>TAQSEEM</b> ilovasiga bog'landi.\n"
+            . "Endi muhim bildirishnomalarni shu yerda olasiz. \u{1F514}\n\n"
+            . "Ilovaga qaytishingiz mumkin. \u{1F4F2}",
         );
     }
 

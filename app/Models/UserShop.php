@@ -21,12 +21,15 @@ class UserShop extends Pivot
         'user_id',
         'shop_id',
         'user_type',
+        'permissions',
+        'invited_by',
     ];
 
     protected function casts(): array
     {
         return [
             'user_type' => ShopUserType::class,
+            'permissions' => 'array',
         ];
     }
 
@@ -38,5 +41,11 @@ class UserShop extends Pivot
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    /** Xodimda berilgan ruxsat bor-yo'qligini tekshiradi (owner bu tekshiruvdan tashqarida). */
+    public function hasPermission(string $permission): bool
+    {
+        return in_array($permission, $this->permissions ?? [], true);
     }
 }

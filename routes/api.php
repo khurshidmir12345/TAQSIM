@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\BreadCategoryController;
 use App\Http\Controllers\Api\V1\BusinessTypeController;
 use App\Http\Controllers\Api\V1\CustomBusinessTypeController;
 use App\Http\Controllers\Api\V1\CurrencyController;
+use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\IngredientController;
@@ -16,9 +17,13 @@ use App\Http\Controllers\Api\V1\ProductionController;
 use App\Http\Controllers\Api\V1\RecipeController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\ReturnController;
+use App\Http\Controllers\Api\V1\ExchangeRateController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ShopController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SystemLinkController;
 use App\Http\Controllers\Api\V1\TelegramAuthController;
+use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
@@ -66,31 +71,67 @@ Route::prefix('v1')->group(function () {
         Route::delete('/auth/account',    [AuthController::class, 'deleteAccount']);
         Route::post('/auth/logout',       [AuthController::class, 'logout']);
 
-        // ── Shops ──────────────────────────────────────────────────
-        Route::apiResource('shops', ShopController::class);
+        // ── Telegram Connect (mavjud foydalanuvchiga bog'lash) ──────
+        Route::post('/auth/telegram/connect-session',             [TelegramAuthController::class, 'createConnectSession']);
+        Route::get('/auth/telegram/connect-status/{sessionToken}', [TelegramAuthController::class, 'connectStatus']);
 
-        // ── Custom Business Types (admin statistika + promote) ──────
-        Route::get('/custom-business-types',          [CustomBusinessTypeController::class, 'index']);
-        Route::post('/custom-business-types/promote', [CustomBusinessTypeController::class, 'promote']);
+        // ── Billing / Obuna (gate'siz — bloklangan userlar ham ko'ra oladi) ──
+        Route::get('/subscription/plans',    [SubscriptionController::class, 'plans']);
+        Route::get('/subscription/me',       [SubscriptionController::class, 'me']);
+        Route::post('/subscription/purchase', [SubscriptionController::class, 'purchase']);
+        Route::get('/wallet',                [WalletController::class, 'show']);
+        Route::get('/wallet/transactions',   [WalletController::class, 'transactions']);
+        Route::post('/wallet/topup',         [WalletController::class, 'topup']);
+        Route::get('/orders',                [OrderController::class, 'index']);
+        Route::get('/exchange-rate',         [ExchangeRateController::class, 'show']);
 
-        Route::prefix('shops/{shop}')->group(function () {
-            Route::apiResource('bread-categories', BreadCategoryController::class);
-            Route::apiResource('ingredients',      IngredientController::class);
-            Route::apiResource('recipes',          RecipeController::class);
-            Route::apiResource('productions',      ProductionController::class)
-                ->only(['index', 'store', 'update', 'destroy']);
-            Route::apiResource('returns',          ReturnController::class)
-                ->only(['index', 'store', 'destroy']);
-            Route::apiResource('expenses',         ExpenseController::class);
-            Route::get('expense-categories', [ExpenseCategoryController::class, 'index']);
-            Route::post('expense-categories', [ExpenseCategoryController::class, 'store']);
+        // ── Feature route'lar (obuna gate ostida) ───────────────────
+        Route::middleware('subscription')->group(function () {
+            // ── Shops ──────────────────────────────────────────────────
+            Route::apiResource('shops', ShopController::class);
 
-            Route::get('reports/daily',   [ReportController::class, 'daily']);
-            Route::get('reports/range',   [ReportController::class, 'range']);
-            Route::get('reports/summary', [ReportController::class, 'summary']);
+            // ── Custom Business Types (admin statistika + promote) ──────
+            Route::get('/custom-business-types',          [CustomBusinessTypeController::class, 'index']);
+            Route::post('/custom-business-types/promote', [CustomBusinessTypeController::class, 'promote']);
 
-            // Tutorial / Onboarding status
-            Route::get('onboarding-status', [OnboardingController::class, 'status']);
+            Route::prefix('shops/{shop}')->group(function () {
+                Route::apiResource('bread-categories', BreadCategoryController::class)
+                    ->middleware('shop.perm:manage_products');
+                Route::apiResource('ingredients',      IngredientController::class)
+                    ->middleware('shop.perm:manage_recipes');
+                Route::apiResource('recipes',          RecipeController::class)
+                    ->middleware('shop.perm:manage_recipes');
+                Route::apiResource('productions',      ProductionController::class)
+                    ->only(['index', 'store', 'update', 'destroy'])
+                    ->middleware('shop.perm:manage_production');
+                Route::apiResource('returns',          ReturnController::class)
+                    ->only(['index', 'store', 'destroy'])
+                    ->middleware('shop.perm:manage_sales');
+                Route::apiResource('expenses',         ExpenseController::class)
+                    ->middleware('shop.perm:manage_expenses');
+                Route::get('expense-categories', [ExpenseCategoryController::class, 'index'])
+                    ->middleware('shop.perm:manage_expenses');
+                Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])
+                    ->middleware('shop.perm:manage_expenses');
+
+                Route::middleware('shop.perm:view_reports,read')->group(function () {
+                    Route::get('reports/daily',   [ReportController::class, 'daily']);
+                    Route::get('reports/range',   [ReportController::class, 'range']);
+                    Route::get('reports/summary', [ReportController::class, 'summary']);
+                });
+
+                // ── Xodimlar (faqat owner) ──────────────────────────────
+                Route::middleware('shop.perm:owner')->group(function () {
+                    Route::get('employees',                       [EmployeeController::class, 'index']);
+                    Route::post('employees',                      [EmployeeController::class, 'store']);
+                    Route::post('employees/confirm',              [EmployeeController::class, 'confirm']);
+                    Route::put('employees/{employee}/permissions', [EmployeeController::class, 'updatePermissions']);
+                    Route::delete('employees/{employee}',         [EmployeeController::class, 'destroy']);
+                });
+
+                // Tutorial / Onboarding status
+                Route::get('onboarding-status', [OnboardingController::class, 'status']);
+            });
         });
     });
 });

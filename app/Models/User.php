@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -81,10 +82,72 @@ class User extends Authenticatable implements FilamentUser
         return $this->shops()->wherePivot('user_type', ShopUserType::Owner->value);
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class)->latest();
+    }
+
+    /** Xodim sifatidagi obunalari (owner obunasidan alohida). */
+    public function sellerSubs(): HasMany
+    {
+        return $this->hasMany(SellerSub::class)->latest();
+    }
+
+    public function currentSubscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)
+            ->where('is_current', true)
+            ->latestOfMany();
+    }
+
+    public function walletTransactions(): HasMany
+    {
+        return $this->hasMany(WalletTransaction::class)->latest();
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class)->latest();
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         $adminEmail = config('admin.email');
 
         return ! empty($adminEmail) && $this->email === $adminEmail;
+    }
+
+    // ─── Rol (user_type) ─────────────────────────────────────────────────────
+
+    private ?string $cachedUserType = null;
+
+    public function isShopOwner(): bool
+    {
+        return $this->ownedShops()->exists();
+    }
+
+    public function isSeller(): bool
+    {
+        return $this->userShops()
+            ->where('user_type', ShopUserType::Seller->value)
+            ->exists();
+    }
+
+    /**
+     * Global rol: do'kon egasi bo'lsa 'owner', xodim bo'lsa 'seller',
+     * aks holda (hali do'kon yo'q yangi user) — 'owner' (prospektiv egasi).
+     * Har bir API javobida shu qaytariladi (so'rov davomida keshlanadi).
+     */
+    public function globalUserType(): string
+    {
+        if ($this->cachedUserType !== null) {
+            return $this->cachedUserType;
+        }
+
+        if ($this->isSeller() && ! $this->isShopOwner()) {
+            return $this->cachedUserType = ShopUserType::Seller->value;
+        }
+
+        return $this->cachedUserType = ShopUserType::Owner->value;
     }
 }

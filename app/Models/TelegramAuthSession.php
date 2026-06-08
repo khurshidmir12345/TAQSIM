@@ -12,6 +12,7 @@ class TelegramAuthSession extends Model
 
     protected $fillable = [
         'session_token',
+        'type',
         'telegram_chat_id',
         'phone',
         'first_name',

@@ -2,18 +2,22 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\WalletTransactionType;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers\ShopsRelationManager;
 use App\Models\User;
+use App\Services\WalletService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
@@ -188,6 +192,32 @@ class UserResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                Tables\Actions\Action::make('topUpBalance')
+                    ->label('Balans to\'ldirish')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\TextInput::make('amount')
+                            ->label('Summa (UZS)')
+                            ->numeric()
+                            ->minValue(0.01)
+                            ->required(),
+                        Forms\Components\TextInput::make('description')
+                            ->label('Izoh')
+                            ->default('Admin tomonidan to\'ldirildi'),
+                    ])
+                    ->action(function (User $record, array $data): void {
+                        app(WalletService::class)->credit(
+                            $record,
+                            (float) $data['amount'],
+                            WalletTransactionType::Topup,
+                            $data['description'] ?? null,
+                            null,
+                            Auth::user(),
+                        );
+
+                        Notification::make()->title('Balans to\'ldirildi')->success()->send();
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

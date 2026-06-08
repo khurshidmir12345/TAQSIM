@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ShopUserType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -71,6 +72,17 @@ class Shop extends Model
             ->using(UserShop::class)
             ->withPivot('user_type')
             ->withTimestamps();
+    }
+
+    /**
+     * Do'kon egasi (owner). Limit/billing hisob-kitoblari doim egaga bog'lanadi —
+     * xodim (seller) egasining hisobi ichida ishlaydi.
+     */
+    public function owner(): ?User
+    {
+        return $this->users()
+            ->wherePivot('user_type', ShopUserType::Owner->value)
+            ->first();
     }
 
     public function breadCategories(): HasMany

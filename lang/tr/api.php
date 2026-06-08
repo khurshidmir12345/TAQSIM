@@ -8,6 +8,10 @@ return [
     'ping' => 'Taqsim API çalışıyor',
 
     'errors' => [
+        'subscription_required' => 'Abonelik süresi doldu. Devam etmek için bir paket seçin.',
+        'plan_limit_reached' => 'Paket limitine ulaşıldı. Daha yüksek bir pakete geçin.',
+        'insufficient_balance' => 'Bakiye yetersiz. Lütfen bakiyenizi yükleyin.',
+        'yearly_not_available' => 'Bu planda yıllık abonelik mevcut değil.',
         'generic' => 'Hata',
         'unauthenticated' => 'Oturum açılmadı.',
         'validation_failed' => 'Veriler geçersiz.',
@@ -17,6 +21,7 @@ return [
         'forbidden_shop' => 'Bu işletmeye erişim yok.',
         'forbidden_shop_bakery' => 'Bu fırına erişim yok.',
         'forbidden_owner_only' => 'Bu işlemi yalnızca sahip yapabilir.',
+        'forbidden_permission' => 'Bu bölüm için yetkiniz yok.',
         'rate_limit' => 'Çok fazla istek. Lütfen bekleyin.',
         'server_error' => 'Sunucu hatası.',
         'invalid_expense_category' => 'Geçersiz gider kategorisi veya size ait değil.',
@@ -47,5 +52,14 @@ return [
 
     'recipe' => [
         'duplicate_bread_category' => 'Bu ürün kategorisi için tarif zaten mevcut.',
+    ],
+
+    'employees' => [
+        'code_sent' => 'Doğrulama kodu çalışanın numarasına gönderildi.',
+        'created' => 'Çalışan eklendi.',
+        'phone_taken' => 'Bu numara zaten kayıtlı. Başka bir numara girin.',
+        'invite_expired' => 'Davet süresi doldu. Tekrar deneyin.',
+        'seat_suspended' => 'Çalışan koltuğu ödeme süresi doldu. Bakiyenizi yükleyin.',
+        'owner_subscription_inactive' => 'Sahibin aboneliği sona erdi. Sahip ile iletişime geçin.',
     ],
 ];

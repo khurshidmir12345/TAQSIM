@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->prependToGroup('api', \App\Http\Middleware\SetApiLocale::class);
+        $middleware->alias([
+            'subscription' => \App\Http\Middleware\EnsureActiveSubscription::class,
+            'shop.perm' => \App\Http\Middleware\EnsureShopPermission::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 

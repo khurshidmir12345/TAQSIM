@@ -8,11 +8,15 @@ use App\Http\Resources\BreadCategoryResource;
 use App\Models\BreadCategory;
 use App\Models\Currency;
 use App\Models\Shop;
+use App\Services\PlanLimitService;
+use App\Traits\EnforcesPlanLimits;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BreadCategoryController extends BaseShopController
 {
+    use EnforcesPlanLimits;
+
     public function index(Request $request, Shop $shop): JsonResponse
     {
         $this->authorizeShop($request, $shop);
@@ -36,9 +40,15 @@ class BreadCategoryController extends BaseShopController
         ]);
     }
 
-    public function store(StoreBreadCategoryRequest $request, Shop $shop): JsonResponse
+    public function store(StoreBreadCategoryRequest $request, Shop $shop, PlanLimitService $limits): JsonResponse
     {
         $this->authorizeShop($request, $shop);
+
+        // Limit doim do'kon egasining tarifiga qarab tekshiriladi (xodim ham shu hisobda).
+        $account = $shop->owner() ?? $request->user();
+        if (! $limits->canAddProduct($account)) {
+            return $this->planLimitResponse($limits->info($account, 'products'), 'products');
+        }
 
         $data = $request->validated();
         if (empty($data['currency_id'])) {

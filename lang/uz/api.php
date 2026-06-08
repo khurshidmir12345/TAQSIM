@@ -8,6 +8,10 @@ return [
     'ping' => 'Taqsim API ishlayapti',
 
     'errors' => [
+        'subscription_required' => 'Obuna muddati tugagan. Davom etish uchun tarif tanlang.',
+        'plan_limit_reached' => 'Tarif limiti to‘ldi. Yuqori tarifga o‘ting.',
+        'insufficient_balance' => 'Balansda mablag‘ yetarli emas. Iltimos, balansni to‘ldiring.',
+        'yearly_not_available' => 'Bu tarifda yillik obuna mavjud emas.',
         'generic' => 'Xatolik',
         'unauthenticated' => 'Avtorizatsiyadan o‘tilmagan.',
         'validation_failed' => 'Ma’lumotlar noto‘g‘ri.',
@@ -17,6 +21,7 @@ return [
         'forbidden_shop' => 'Bu biznesga kirishga ruxsat yo‘q.',
         'forbidden_shop_bakery' => 'Bu nonvoyxonaga kirishga ruxsat yo‘q.',
         'forbidden_owner_only' => 'Faqat egasi bu amalni bajara oladi.',
+        'forbidden_permission' => 'Bu bo‘lim uchun ruxsatingiz yo‘q.',
         'rate_limit' => 'Juda ko‘p so‘rov. Biroz kuting.',
         'server_error' => 'Serverda xatolik yuz berdi.',
         'invalid_expense_category' => 'Xarajat turi noto‘g‘ri yoki sizga tegishli emas.',
@@ -49,5 +54,14 @@ return [
 
     'recipe' => [
         'duplicate_bread_category' => 'Bu mahsulot turi uchun retsept allaqachon mavjud.',
+    ],
+
+    'employees' => [
+        'code_sent' => 'Tasdiqlash kodi xodim raqamiga yuborildi.',
+        'created' => 'Xodim qo‘shildi.',
+        'phone_taken' => 'Bu raqam allaqachon ro‘yxatdan o‘tgan. Boshqa raqam kiriting.',
+        'invite_expired' => 'Taklif muddati tugadi. Qaytadan urinib ko‘ring.',
+        'seat_suspended' => 'Xodim o‘rni to‘lovi muddati tugagan. Balansni to‘ldiring.',
+        'owner_subscription_inactive' => 'Biznes egasi obunasi tugagan. Egasi bilan bog‘laning.',
     ],
 ];

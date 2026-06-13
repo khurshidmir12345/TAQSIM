@@ -12,6 +12,7 @@ use App\Services\GoogleAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class GoogleAuthController extends Controller
@@ -42,6 +43,10 @@ class GoogleAuthController extends Controller
         try {
             $payload = $this->googleAuth->verifyIdToken($request->string('id_token'));
         } catch (RuntimeException $e) {
+            Log::warning('Google sign-in token verification failed', [
+                'reason' => $e->getMessage(),
+            ]);
+
             return $this->error(__('api.auth.google_invalid_token'), 401);
         }
 

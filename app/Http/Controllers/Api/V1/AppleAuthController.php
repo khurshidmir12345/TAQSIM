@@ -12,6 +12,7 @@ use App\Services\DeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class AppleAuthController extends Controller
@@ -42,6 +43,12 @@ class AppleAuthController extends Controller
         try {
             $payload = $this->appleAuth->verifyIdentityToken($request->string('identity_token'));
         } catch (RuntimeException $e) {
+            Log::warning('Apple sign-in token verification failed', [
+                'reason' => $e->getMessage(),
+                'has_name' => $request->filled('name'),
+                'has_email' => $request->filled('email'),
+            ]);
+
             return $this->error(__('api.auth.apple_invalid_token'), 401);
         }
 

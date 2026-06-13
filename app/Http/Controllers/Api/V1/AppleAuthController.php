@@ -74,8 +74,14 @@ class AppleAuthController extends Controller
                 return $user;
             }
 
-            // 2) Email orqali topilsa (foydalanuvchi avval boshqa usulda kirgan) — link qilamiz
-            $user = $email ? User::where('email', $email)->first() : null;
+            // 2) Mavjud foydalanuvchini topamiz (soft-deleted bo'lsa ham, chunki
+            //    unique index trashed qatorlarni ham ushlab turadi):
+            //      a) apple_id ustuni — AuthIdentity'dan oldin yaratilgan eski userlar
+            //      b) email — boshqa usulda kirgan bo'lsa link qilamiz
+            $user = User::withTrashed()->where('apple_id', $appleSub)->first();
+            if (! $user && $email) {
+                $user = User::withTrashed()->where('email', $email)->first();
+            }
 
             // 3) Hech qayerda topilmasa — yangi user
             if (! $user) {
@@ -87,6 +93,10 @@ class AppleAuthController extends Controller
                     'email_verified_at' => $payload['email_verified'] ? now() : null,
                 ]);
             } else {
+                // O'chirilgan akkaunt qayta kirishda tiklanadi.
+                if ($user->trashed()) {
+                    $user->restore();
+                }
                 $updates = ['apple_id' => $appleSub];
                 if ($name && empty($user->name)) {
                     $updates['name'] = $name;
@@ -97,16 +107,20 @@ class AppleAuthController extends Controller
                 $user->fill($updates)->save();
             }
 
-            AuthIdentity::create([
-                'user_id'          => $user->id,
-                'provider'         => AuthProvider::Apple->value,
-                'provider_subject' => $appleSub,
-                'metadata'         => [
-                    'email'          => $email,
-                    'email_verified' => $payload['email_verified'],
+            AuthIdentity::updateOrCreate(
+                [
+                    'provider'         => AuthProvider::Apple->value,
+                    'provider_subject' => $appleSub,
                 ],
-                'verified_at'      => now(),
-            ]);
+                [
+                    'user_id'     => $user->id,
+                    'metadata'    => [
+                        'email'          => $email,
+                        'email_verified' => $payload['email_verified'],
+                    ],
+                    'verified_at' => now(),
+                ]
+            );
 
             return $user;
         });

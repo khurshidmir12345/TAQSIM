@@ -107,6 +107,33 @@ class GoogleAuthTest extends TestCase
         ]);
     }
 
+    public function test_soft_deleted_account_is_restored_on_sign_in(): void
+    {
+        $this->mockGoogleService([]);
+
+        // Avval o'chirilgan (soft-deleted) akkaunt — unique index hali ushlab turibdi.
+        $user = User::factory()->create([
+            'email' => 'user@gmail.com',
+            'google_id' => 'google-sub-123',
+        ]);
+        $user->delete();
+        $this->assertSoftDeleted('users', ['id' => $user->id]);
+
+        $response = $this->postJson('/api/v1/auth/google', [
+            'id_token' => 'fake.jwt.token',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.user.id', $user->id);
+
+        // Akkaunt tiklandi, dublikat yaratilmadi.
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'deleted_at' => null,
+        ]);
+        $this->assertSame(1, User::withTrashed()->count());
+    }
+
     public function test_invalid_token_returns_401(): void
     {
         $this->mock(GoogleAuthService::class, function (MockInterface $mock) {

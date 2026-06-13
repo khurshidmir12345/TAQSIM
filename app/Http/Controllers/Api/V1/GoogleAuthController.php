@@ -73,8 +73,14 @@ class GoogleAuthController extends Controller
                 return $user;
             }
 
-            // 2) Email orqali topilsa (foydalanuvchi avval boshqa usulda kirgan) — link qilamiz
-            $user = $email ? User::where('email', $email)->first() : null;
+            // 2) Mavjud foydalanuvchini topamiz (soft-deleted bo'lsa ham, chunki
+            //    unique index trashed qatorlarni ham ushlab turadi):
+            //      a) google_id ustuni — AuthIdentity'dan oldin yaratilgan eski userlar
+            //      b) email — boshqa usulda kirgan bo'lsa link qilamiz
+            $user = User::withTrashed()->where('google_id', $googleSub)->first();
+            if (! $user && $email) {
+                $user = User::withTrashed()->where('email', $email)->first();
+            }
 
             // 3) Hech qayerda topilmasa — yangi user
             if (! $user) {
@@ -86,6 +92,10 @@ class GoogleAuthController extends Controller
                     'email_verified_at'  => $payload['email_verified'] ? now() : null,
                 ]);
             } else {
+                // O'chirilgan akkaunt qayta kirishda tiklanadi.
+                if ($user->trashed()) {
+                    $user->restore();
+                }
                 $updates = ['google_id' => $googleSub];
                 if ($name && empty($user->name)) {
                     $updates['name'] = $name;
@@ -96,17 +106,21 @@ class GoogleAuthController extends Controller
                 $user->fill($updates)->save();
             }
 
-            AuthIdentity::create([
-                'user_id'          => $user->id,
-                'provider'         => AuthProvider::Google->value,
-                'provider_subject' => $googleSub,
-                'metadata'         => [
-                    'email'          => $email,
-                    'email_verified' => $payload['email_verified'],
-                    'picture'        => $payload['picture'],
+            AuthIdentity::updateOrCreate(
+                [
+                    'provider'         => AuthProvider::Google->value,
+                    'provider_subject' => $googleSub,
                 ],
-                'verified_at'      => now(),
-            ]);
+                [
+                    'user_id'     => $user->id,
+                    'metadata'    => [
+                        'email'          => $email,
+                        'email_verified' => $payload['email_verified'],
+                        'picture'        => $payload['picture'],
+                    ],
+                    'verified_at' => now(),
+                ]
+            );
 
             return $user;
         });

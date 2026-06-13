@@ -46,6 +46,8 @@ return [
         'device_revoked' => 'Qurilma chiqarildi.',
         'apple_invalid_token' => 'Apple identifikatsiya tokeni yaroqsiz yoki muddati o‘tgan.',
         'apple_login_success' => 'Apple ID orqali tizimga kirdingiz.',
+        'google_invalid_token' => 'Google identifikatsiya tokeni yaroqsiz yoki muddati o‘tgan.',
+        'google_login_success' => 'Google orqali tizimga kirdingiz.',
     ],
 
     'shop' => [

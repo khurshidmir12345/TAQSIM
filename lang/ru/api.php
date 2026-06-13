@@ -46,6 +46,8 @@ return [
         'device_revoked' => 'Устройство отключено.',
         'apple_invalid_token' => 'Apple identity token недействителен или истёк.',
         'apple_login_success' => 'Вы вошли через Apple ID.',
+        'google_invalid_token' => 'Google токен недействителен или истёк.',
+        'google_login_success' => 'Вы вошли через Google.',
     ],
 
     'shop' => [

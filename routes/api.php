@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
 use App\Http\Controllers\Api\V1\ExpenseController;
+use App\Http\Controllers\Api\V1\GoogleAuthController;
 use App\Http\Controllers\Api\V1\IngredientController;
 use App\Http\Controllers\Api\V1\MeasurementUnitController;
 use App\Http\Controllers\Api\V1\OnboardingController;
@@ -60,6 +61,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/register',  [AuthController::class, 'register']);
         Route::post('/auth/login',     [AuthController::class, 'login']);
         Route::post('/auth/apple',     [AppleAuthController::class, 'login']);
+        Route::post('/auth/google',    [GoogleAuthController::class, 'login']);
     });
 
     // ── Auth (protected) ───────────────────────────────────────────

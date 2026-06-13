@@ -53,4 +53,22 @@ return [
         'issuer'     => env('APPLE_ISSUER', 'https://appleid.apple.com'),
     ],
 
+    'google' => [
+        /*
+        |--------------------------------------------------------------------
+        | Google Sign-In
+        |--------------------------------------------------------------------
+        | Ruxsat etilgan OAuth client ID(lar) — vergul bilan ajratiladi.
+        | ID token `aud` shulardan biriga teng bo'lishi shart:
+        |  - Web (server) client ID — Android `serverClientId` shu bo'lganda
+        |    token audience web client bo'ladi.
+        |  - iOS client ID — iOS native sign-in uchun.
+        |  - Android client ID — zaxira (ba'zi konfiguratsiyalarda).
+        */
+        'client_ids' => array_filter(array_map('trim', explode(',', (string) env('GOOGLE_CLIENT_IDS', '')))),
+        'jwks_url'   => env('GOOGLE_JWKS_URL', 'https://www.googleapis.com/oauth2/v3/certs'),
+        // Google ID token `iss` ikki variantdan biri bo'ladi.
+        'issuers'    => ['https://accounts.google.com', 'accounts.google.com'],
+    ],
+
 ];

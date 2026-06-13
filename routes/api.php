@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\BreadCategoryController;
 use App\Http\Controllers\Api\V1\BusinessTypeController;
 use App\Http\Controllers\Api\V1\CustomBusinessTypeController;
 use App\Http\Controllers\Api\V1\CurrencyController;
+use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
 use App\Http\Controllers\Api\V1\ExpenseController;
@@ -71,6 +72,10 @@ Route::prefix('v1')->group(function () {
         Route::delete('/auth/account',    [AuthController::class, 'deleteAccount']);
         Route::post('/auth/logout',       [AuthController::class, 'logout']);
 
+        // ── Qurilmalar (multi-device sessiya boshqaruvi) ────────────
+        Route::get('/auth/devices',            [DeviceController::class, 'index']);
+        Route::delete('/auth/devices/{device}', [DeviceController::class, 'destroy']);
+
         // ── Telegram Connect (mavjud foydalanuvchiga bog'lash) ──────
         Route::post('/auth/telegram/connect-session',             [TelegramAuthController::class, 'createConnectSession']);
         Route::get('/auth/telegram/connect-status/{sessionToken}', [TelegramAuthController::class, 'connectStatus']);
@@ -80,6 +85,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/subscription/me',       [SubscriptionController::class, 'me']);
         Route::post('/subscription/purchase', [SubscriptionController::class, 'purchase']);
         Route::get('/wallet',                [WalletController::class, 'show']);
+        Route::get('/wallet/topup-info',     [WalletController::class, 'topupInfo']);
         Route::get('/wallet/transactions',   [WalletController::class, 'transactions']);
         Route::post('/wallet/topup',         [WalletController::class, 'topup']);
         Route::get('/orders',                [OrderController::class, 'index']);

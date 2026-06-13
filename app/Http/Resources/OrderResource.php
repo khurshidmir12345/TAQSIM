@@ -21,6 +21,8 @@ class OrderResource extends JsonResource
             'amount_local' => (float) $this->amount_local,
             'currency_code' => $this->currency_code,
             'payment_method' => $this->payment_method,
+            'reject_reason' => $this->reject_reason,
+            'has_receipt' => $this->receipt_path !== null,
             'paid_at' => $this->paid_at,
             'created_at' => $this->created_at,
         ];

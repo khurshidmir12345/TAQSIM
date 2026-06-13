@@ -10,6 +10,7 @@ use App\Http\Requests\SendCodeRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\DeviceService;
 use App\Services\OtpService;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,7 @@ class AuthController extends Controller
     public function __construct(
         private readonly OtpService $otpService,
         private readonly SmsService $smsService,
+        private readonly DeviceService $devices,
     ) {}
 
     /**
@@ -84,11 +86,12 @@ class AuthController extends Controller
             'phone_verified_at'  => now(),
         ]);
 
-        $token = $user->createToken('mobile')->plainTextToken;
+        $newToken = $user->createToken('mobile');
+        $this->devices->record($user, $newToken, $request);
 
         return $this->created([
             'user'  => new UserResource($user),
-            'token' => $token,
+            'token' => $newToken->plainTextToken,
         ], __('api.auth.register_success'));
     }
 
@@ -105,12 +108,13 @@ class AuthController extends Controller
             ]);
         }
 
-        $user->tokens()->delete();
-        $token = $user->createToken('mobile')->plainTextToken;
+        // Multi-device: eski sessiyalar o'chirilmaydi — har qurilma o'z tokeni bilan.
+        $newToken = $user->createToken('mobile');
+        $this->devices->record($user, $newToken, $request);
 
         return $this->success([
             'user'  => new UserResource($user),
-            'token' => $token,
+            'token' => $newToken->plainTextToken,
         ], __('api.auth.login_success'));
     }
 
@@ -186,12 +190,16 @@ class AuthController extends Controller
     {
         $user = $request->user();
         $user->update(['password' => $request->password]);
-        $user->tokens()->delete();
 
-        $token = $user->createToken('mobile')->plainTextToken;
+        // Xavfsizlik: parol o'zgarsa barcha sessiyalar bekor qilinadi
+        // (user_devices yozuvlari ham cascade orqali o'chadi), so'ng joriy
+        // qurilma uchun yangi token va qurilma yozuvi yaratiladi.
+        $user->tokens()->delete();
+        $newToken = $user->createToken('mobile');
+        $this->devices->record($user, $newToken, $request);
 
         return $this->success([
-            'token' => $token,
+            'token' => $newToken->plainTextToken,
         ], __('api.auth.password_changed'));
     }
 
@@ -212,7 +220,13 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        // Faqat joriy qurilma sessiyasi tugatiladi (multi-device). Sanctum
+        // PersonalAccessToken bo'lsa o'chiriladi; TransientToken (test/oddiy
+        // guard) bo'lsa o'tkazib yuboriladi.
+        $token = $request->user()->currentAccessToken();
+        if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+            $token->delete();
+        }
 
         return $this->success(null, __('api.auth.logout_success'));
     }

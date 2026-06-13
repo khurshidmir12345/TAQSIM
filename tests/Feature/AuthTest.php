@@ -12,11 +12,19 @@ class AuthTest extends TestCase
 
     public function test_user_can_register(): void
     {
+        // Ro'yxatdan o'tish OTP talab qiladi — avval kod yaratamiz.
+        \App\Models\PhoneVerificationCode::create([
+            'phone' => '+998901111111',
+            'code' => '1234',
+            'expires_at' => now()->addMinutes(2),
+        ]);
+
         $response = $this->postJson('/api/v1/auth/register', [
             'name' => 'Test User',
             'phone' => '+998901111111',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'code' => '1234',
         ]);
 
         $response->assertStatus(201)
@@ -46,15 +54,24 @@ class AuthTest extends TestCase
     {
         User::factory()->create(['phone' => '+998901111111']);
 
+        \App\Models\PhoneVerificationCode::create([
+            'phone' => '+998901111111',
+            'code' => '1234',
+            'expires_at' => now()->addMinutes(2),
+        ]);
+
         $response = $this->postJson('/api/v1/auth/register', [
             'name' => 'Test',
             'phone' => '+998901111111',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'code' => '1234',
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['phone']);
+        // Telefon band bo'lsa controller 409 + phone_exists qaytaradi.
+        $response->assertStatus(409)
+            ->assertJson(['success' => false])
+            ->assertJsonPath('errors.phone_exists', true);
     }
 
     public function test_user_can_login(): void

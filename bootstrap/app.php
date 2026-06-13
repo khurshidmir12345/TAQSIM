@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\ApiMeta;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -39,47 +40,47 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (ValidationException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
+                return response()->json(ApiMeta::decorate([
                     'success' => false,
                     'message' => __('api.errors.validation_failed'),
                     'errors' => $e->errors(),
-                ], 422);
+                ]), 422);
             }
         });
 
         $exceptions->render(function (ModelNotFoundException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
+                return response()->json(ApiMeta::decorate([
                     'success' => false,
                     'message' => __('api.errors.not_found'),
-                ], 404);
+                ]), 404);
             }
         });
 
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
+                return response()->json(ApiMeta::decorate([
                     'success' => false,
                     'message' => $e->getMessage() ?: __('api.errors.not_found_http'),
-                ], 404);
+                ]), 404);
             }
         });
 
         $exceptions->render(function (AccessDeniedHttpException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
+                return response()->json(ApiMeta::decorate([
                     'success' => false,
                     'message' => $e->getMessage() ?: __('api.errors.forbidden'),
-                ], 403);
+                ]), 403);
             }
         });
 
         $exceptions->render(function (TooManyRequestsHttpException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
+                return response()->json(ApiMeta::decorate([
                     'success' => false,
                     'message' => __('api.errors.rate_limit'),
-                ], 429);
+                ]), 429);
             }
         });
 
@@ -87,12 +88,12 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson() || $request->is('api/*')) {
                 $code = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
 
-                return response()->json([
+                return response()->json(ApiMeta::decorate([
                     'success' => false,
                     'message' => app()->isProduction()
                         ? __('api.errors.server_error')
                         : $e->getMessage(),
-                ], $code);
+                ]), $code);
             }
         });
 

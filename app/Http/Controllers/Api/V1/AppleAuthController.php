@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Models\AuthIdentity;
 use App\Models\User;
 use App\Services\AppleAuthService;
+use App\Services\DeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ class AppleAuthController extends Controller
 {
     public function __construct(
         private readonly AppleAuthService $appleAuth,
+        private readonly DeviceService $devices,
     ) {}
 
     /**
@@ -102,12 +104,13 @@ class AppleAuthController extends Controller
             return $user;
         });
 
-        $user->tokens()->delete();
-        $token = $user->createToken('mobile')->plainTextToken;
+        // Multi-device: eski sessiyalar saqlanadi.
+        $newToken = $user->createToken('mobile');
+        $this->devices->record($user, $newToken, $request);
 
         return $this->success([
             'user'  => new UserResource($user->refresh()),
-            'token' => $token,
+            'token' => $newToken->plainTextToken,
         ], __('api.auth.apple_login_success'));
     }
 }

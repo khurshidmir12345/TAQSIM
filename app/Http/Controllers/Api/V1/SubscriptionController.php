@@ -90,6 +90,7 @@ class SubscriptionController extends Controller
                     'shortfall' => max(0, $priceLocal - (float) $user->balance),
                     'currency_code' => 'UZS',
                 ],
+                'meta' => \App\Support\ApiMeta::withUserType(),
             ], 402);
         }
 
@@ -101,6 +102,7 @@ class SubscriptionController extends Controller
                     'success' => false,
                     'message' => __('api.errors.insufficient_balance'),
                     'code' => 'insufficient_balance',
+                    'meta' => \App\Support\ApiMeta::withUserType(),
                 ], 402);
             }
 

@@ -73,7 +73,7 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->belongsToMany(Shop::class, 'user_shops')
             ->using(UserShop::class)
-            ->withPivot('user_type')
+            ->withPivot('user_type', 'permissions')
             ->withTimestamps();
     }
 

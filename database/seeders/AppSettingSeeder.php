@@ -23,6 +23,24 @@ class AppSettingSeeder extends Seeder
                 'group' => 'employees',
                 'label' => 'Juma kuni chegirma (%)',
             ],
+            [
+                'key' => 'topup_card_number',
+                'value' => '8600 0000 0000 0000',
+                'group' => 'billing',
+                'label' => 'Balans to\'ldirish karta raqami',
+            ],
+            [
+                'key' => 'topup_card_holder',
+                'value' => 'TAQSEEM',
+                'group' => 'billing',
+                'label' => 'Karta egasi',
+            ],
+            [
+                'key' => 'topup_note',
+                'value' => 'To\'lovni amalga oshirgach, chek rasmini yuklang. Admin tasdiqlagach balans to\'ldiriladi.',
+                'group' => 'billing',
+                'label' => 'Balans to\'ldirish izohi',
+            ],
         ];
 
         foreach ($defaults as $row) {

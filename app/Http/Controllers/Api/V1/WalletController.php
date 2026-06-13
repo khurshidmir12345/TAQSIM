@@ -7,12 +7,30 @@ use App\Enums\OrderType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\WalletTransactionResource;
 use App\Models\Order;
+use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class WalletController extends Controller
 {
+    public function __construct(
+        private readonly SettingService $settings,
+    ) {}
+
+    /**
+     * Balans to'ldirish ma'lumotlari: karta raqami, egasi, izoh.
+     * Asosiy manba — AppSetting; bo'sh bo'lsa config/billing.php fallback.
+     */
+    public function topupInfo(): JsonResponse
+    {
+        return $this->success([
+            'card_number' => $this->settings->get('topup_card_number', config('billing.topup.card_number')),
+            'card_holder' => $this->settings->get('topup_card_holder', config('billing.topup.card_holder')),
+            'note' => $this->settings->get('topup_note', config('billing.topup.note')),
+        ]);
+    }
+
     /** Joriy balans. */
     public function show(Request $request): JsonResponse
     {
@@ -44,7 +62,11 @@ class WalletController extends Controller
     {
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1000'],
+            'receipt_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
+
+        // Chek rasmi maxfiy (private) diskka saqlanadi — to'g'ridan-to'g'ri URL yo'q.
+        $receiptPath = $request->file('receipt_image')->store('receipts', 'local');
 
         $order = Order::create([
             'user_id' => $request->user()->id,
@@ -54,6 +76,7 @@ class WalletController extends Controller
             'amount_local' => $data['amount'],
             'currency_code' => 'UZS',
             'payment_method' => 'manual',
+            'receipt_path' => $receiptPath,
         ]);
 
         return $this->success([

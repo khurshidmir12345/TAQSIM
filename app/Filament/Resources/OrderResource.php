@@ -60,6 +60,12 @@ class OrderResource extends Resource
                         'failed', 'cancelled' => 'danger',
                         default => 'gray',
                     }),
+                Tables\Columns\IconColumn::make('receipt_path')
+                    ->label('Chek')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-paper-clip')
+                    ->falseIcon('heroicon-o-minus')
+                    ->state(fn (Order $record): bool => $record->receipt_path !== null),
                 Tables\Columns\TextColumn::make('created_at')->label('Sana')->dateTime('d.m.Y H:i')->sortable(),
             ])
             ->filters([
@@ -75,6 +81,13 @@ class OrderResource extends Resource
                 ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('viewReceipt')
+                    ->label('Chekni ko\'rish')
+                    ->icon('heroicon-o-document-magnifying-glass')
+                    ->color('gray')
+                    ->visible(fn (Order $record): bool => $record->receipt_path !== null)
+                    ->url(fn (Order $record): string => route('admin.orders.receipt', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\Action::make('approveTopup')
                     ->label('Tasdiqlash (kreditlash)')
                     ->icon('heroicon-o-check-circle')
@@ -98,6 +111,26 @@ class OrderResource extends Resource
                         ]);
 
                         Notification::make()->title('Balans to\'ldirildi')->success()->send();
+                    }),
+                Tables\Actions\Action::make('rejectTopup')
+                    ->label('Rad etish')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn (Order $record): bool => $record->type === OrderType::Topup->value
+                        && $record->status === OrderStatus::Pending->value)
+                    ->form([
+                        \Filament\Forms\Components\Textarea::make('reject_reason')
+                            ->label('Rad etish sababi')
+                            ->required()
+                            ->maxLength(255),
+                    ])
+                    ->action(function (Order $record, array $data): void {
+                        $record->update([
+                            'status' => OrderStatus::Failed->value,
+                            'reject_reason' => $data['reject_reason'],
+                        ]);
+
+                        Notification::make()->title('So\'rov rad etildi')->warning()->send();
                     }),
             ])
             ->defaultSort('created_at', 'desc');

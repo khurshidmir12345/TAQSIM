@@ -7,6 +7,7 @@ use App\Models\Shop;
 use App\Models\UserShop;
 use App\Services\EmployeeService;
 use App\Services\SubscriptionService;
+use App\Support\ApiMeta;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -78,6 +79,7 @@ class EnsureShopPermission
                 'message' => __('api.errors.forbidden_permission'),
                 'code' => 'forbidden_permission',
                 'data' => ['permission' => $permission],
+                'meta' => ApiMeta::withUserType(),
             ], 403);
         }
 
@@ -119,15 +121,24 @@ class EnsureShopPermission
             'success' => false,
             'message' => __('api.employees.owner_subscription_inactive'),
             'code' => 'owner_subscription_inactive',
+            'meta' => ApiMeta::withUserType(),
         ], 403);
     }
 
     private function deny(string $message, string $code, int $status): Response
     {
-        return response()->json([
+        $payload = [
             'success' => false,
             'message' => $message,
             'code' => $code,
-        ], $status);
+        ];
+
+        $meta = ApiMeta::withUserType();
+
+        if (! empty($meta)) {
+            $payload['meta'] = $meta;
+        }
+
+        return response()->json($payload, $status);
     }
 }

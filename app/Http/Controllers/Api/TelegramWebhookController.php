@@ -175,8 +175,17 @@ class TelegramWebhookController extends Controller
             ]);
         }
 
-        $user->tokens()->delete();
-        $token = $user->createToken('mobile')->plainTextToken;
+        // Multi-device: eski sessiyalar saqlanadi. Webhook Telegram serveridan
+        // keladi — haqiqiy qurilma metama'lumoti yo'q, shuning uchun platforma
+        // "telegram" deb belgilanadi (foydalanuvchi profilda ko'rib revoke qila oladi).
+        $newToken = $user->createToken('mobile');
+        $token = $newToken->plainTextToken;
+        \App\Models\UserDevice::create([
+            'user_id' => $user->id,
+            'token_id' => $newToken->accessToken->getKey(),
+            'platform' => 'telegram',
+            'last_active_at' => now(),
+        ]);
 
         $session = TelegramAuthSession::where('telegram_chat_id', $chatId)
             ->where('status', 'pending')

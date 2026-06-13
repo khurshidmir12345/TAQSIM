@@ -22,6 +22,8 @@ class Order extends Model
         'currency_code',
         'exchange_rate',
         'payment_method',
+        'receipt_path',
+        'reject_reason',
         'paid_at',
         'meta',
     ];

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\ShopUserType;
 use App\Services\SubscriptionService;
+use App\Support\ApiMeta;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -77,6 +78,7 @@ class EnsureActiveSubscription
                 'status' => $subscription?->effectiveStatus()->value ?? 'expired',
                 'grace_days_left' => $subscription?->graceDaysLeft() ?? 0,
             ],
+            'meta' => ApiMeta::withUserType(),
         ], 402);
     }
 }

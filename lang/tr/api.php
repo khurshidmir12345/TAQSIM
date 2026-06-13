@@ -43,6 +43,7 @@ return [
         'password_changed' => 'Şifre değiştirildi.',
         'account_deleted' => 'Hesap silindi.',
         'logout_success' => 'Çıkış yaptınız.',
+        'device_revoked' => 'Cihaz çıkarıldı.',
     ],
 
     'shop' => [

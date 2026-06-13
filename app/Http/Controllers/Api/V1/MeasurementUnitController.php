@@ -24,10 +24,7 @@ class MeasurementUnitController extends Controller
 
         $units = $query->get();
 
-        return response()->json([
-            'success' => true,
-            'data'    => MeasurementUnitResource::collection($units),
-        ]);
+        return $this->success(MeasurementUnitResource::collection($units));
     }
 
     /**
@@ -42,10 +39,7 @@ class MeasurementUnitController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data'    => MeasurementUnitResource::collection($units),
-        ]);
+        return $this->success(MeasurementUnitResource::collection($units));
     }
 
     /**
@@ -64,10 +58,7 @@ class MeasurementUnitController extends Controller
             ->orderByRaw("FIELD(code, 'ta', 'kg', 'l', 'm')")
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data'    => MeasurementUnitResource::collection($units),
-        ]);
+        return $this->success(MeasurementUnitResource::collection($units));
     }
 
     /**
@@ -81,9 +72,6 @@ class MeasurementUnitController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data'    => MeasurementUnitResource::collection($units),
-        ]);
+        return $this->success(MeasurementUnitResource::collection($units));
     }
 }

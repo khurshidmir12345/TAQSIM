@@ -182,7 +182,10 @@ class EmployeeService
 
         $pivot = DB::transaction(function () use ($owner, $shop, $phone, $pending, $isPaid, $priceUsd, $priceLocal) {
             // Xodimga TRIAL yaratilmasligi uchun avval seller membership beriladi,
-            // keyin user yaratiladi (UserObserver/ensureTrial sellerni o'tkazib yuboradi).
+            // keyin user yaratiladi. Trial faqat ShopController da do'kon egasiga
+            // ensureTrial() orqali beriladi; foydalanuvchi yaratilishida avtomatik
+            // trial yaratadigan observer YO'Q, shuning uchun seller hech qachon
+            // owner trialini olmaydi (ensureTrial seller'ni o'zi ham chetlatadi).
             $employee = User::create([
                 'name' => $pending['name'],
                 'phone' => $phone,

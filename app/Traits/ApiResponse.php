@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Support\ApiMeta;
 use Illuminate\Http\JsonResponse;
 
 trait ApiResponse
@@ -39,6 +40,12 @@ trait ApiResponse
             $response['errors'] = $errors;
         }
 
+        $meta = $this->withUserType([]);
+
+        if (! empty($meta)) {
+            $response['meta'] = $meta;
+        }
+
         return response()->json($response, $code);
     }
 
@@ -70,12 +77,6 @@ trait ApiResponse
      */
     private function withUserType(array $meta): array
     {
-        $user = auth()->user();
-
-        if ($user !== null && ! isset($meta['user_type'])) {
-            $meta['user_type'] = $user->globalUserType();
-        }
-
-        return $meta;
+        return ApiMeta::withUserType($meta);
     }
 }

@@ -136,6 +136,7 @@ class EmployeeController extends BaseShopController
             'success' => false,
             'message' => $message,
             'code' => $key,
+            'meta' => \App\Support\ApiMeta::withUserType(),
         ], $status);
     }
 }

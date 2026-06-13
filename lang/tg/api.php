@@ -43,6 +43,7 @@ return [
         'password_changed' => 'Парол иваз шуд.',
         'account_deleted' => 'Ҳисоб нест шуд.',
         'logout_success' => 'Шумо баромадед.',
+        'device_revoked' => 'Дастгоҳ хориҷ карда шуд.',
     ],
 
     'shop' => [

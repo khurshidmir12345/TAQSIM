@@ -15,4 +15,13 @@ return [
 
     // CBU (Markaziy bank) kurs API endpointi.
     'cbu_url' => env('BILLING_CBU_URL', 'https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/'),
+
+    // Balans to'ldirish karta ma'lumotlari (zaxira qiymatlar).
+    // Asosiy manba — AppSetting (admin paneldan o'zgartiriladi):
+    //   topup_card_number, topup_card_holder, topup_note
+    'topup' => [
+        'card_number' => env('TOPUP_CARD_NUMBER', ''),
+        'card_holder' => env('TOPUP_CARD_HOLDER', ''),
+        'note' => env('TOPUP_NOTE', ''),
+    ],
 ];

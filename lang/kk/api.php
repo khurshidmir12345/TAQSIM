@@ -43,6 +43,7 @@ return [
         'password_changed' => 'Құпия сөз өзгертілді.',
         'account_deleted' => 'Аккаунт жойылды.',
         'logout_success' => 'Жүйеден шықтыңыз.',
+        'device_revoked' => 'Құрылғы шығарылды.',
     ],
 
     'shop' => [

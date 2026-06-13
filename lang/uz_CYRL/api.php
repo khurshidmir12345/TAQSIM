@@ -43,6 +43,7 @@ return [
         'password_changed' => 'Парол ўзгартирилди.',
         'account_deleted' => 'Ҳисоб ўчирилди.',
         'logout_success' => 'Тизимдан чиқдингиз.',
+        'device_revoked' => 'Қурилма чиқарилди.',
     ],
 
     'shop' => [

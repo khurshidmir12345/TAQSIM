@@ -24,10 +24,13 @@ class WalletController extends Controller
      */
     public function topupInfo(): JsonResponse
     {
+        $enabled = $this->settings->get('topup_enabled', '1') === '1';
+
         return $this->success([
-            'card_number' => $this->settings->get('topup_card_number', config('billing.topup.card_number')),
-            'card_holder' => $this->settings->get('topup_card_holder', config('billing.topup.card_holder')),
-            'note' => $this->settings->get('topup_note', config('billing.topup.note')),
+            'topup_enabled' => $enabled,
+            'card_number'   => $this->settings->get('topup_card_number', config('billing.topup.card_number')),
+            'card_holder'   => $this->settings->get('topup_card_holder', config('billing.topup.card_holder')),
+            'note'          => $this->settings->get('topup_note', config('billing.topup.note')),
         ]);
     }
 
@@ -60,6 +63,10 @@ class WalletController extends Controller
      */
     public function topup(Request $request): JsonResponse
     {
+        if ($this->settings->get('topup_enabled', '1') !== '1') {
+            return $this->error(__('api.topup_disabled'), 503);
+        }
+
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1000'],
             'receipt_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],

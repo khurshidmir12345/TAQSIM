@@ -87,9 +87,7 @@ class PlanLimitService
      */
     public function info(User $user, string $resource): array
     {
-        $plan = $this->effectivePlan($user);
         $field = "max_{$resource}";
-        $limit = $plan?->{$field};
 
         $used = match ($resource) {
             'shops' => $this->shopsUsed($user),
@@ -97,6 +95,19 @@ class PlanLimitService
             'employees' => $this->employeesUsed($user),
             default => 0,
         };
+
+        // Billing o'chirilgan bo'lsa — cheksiz.
+        if (! config('billing.enabled', true)) {
+            return [
+                'limit' => null,
+                'used' => $used,
+                'unlimited' => true,
+                'remaining' => null,
+            ];
+        }
+
+        $plan = $this->effectivePlan($user);
+        $limit = $plan?->{$field};
 
         return [
             'limit' => $limit,
@@ -108,6 +119,11 @@ class PlanLimitService
 
     private function within(User $user, string $field, int $used): bool
     {
+        // Billing o'chirilgan bo'lsa — cheklov yo'q.
+        if (! config('billing.enabled', true)) {
+            return true;
+        }
+
         $plan = $this->effectivePlan($user);
 
         if (! $plan) {

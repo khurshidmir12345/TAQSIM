@@ -1,6 +1,12 @@
 <?php
 
 return [
+    // Obuna/billing tizimini umumiy yoqish/o'chirish kaliti.
+    // false bo'lsa: obuna bloklanmaydi va tarif limitlari cheksiz bo'ladi
+    // (ilova butunlay bepul ishlaydi). Logika saqlanadi — keyin true qilinsa
+    // obuna tizimi to'liq tiklanadi.
+    'enabled' => env('BILLING_ENABLED', true),
+
     // Trial tugagandan keyin yumshoq (read-only) davr, kunlarda.
     'grace_days' => (int) env('BILLING_GRACE_DAYS', 3),
 

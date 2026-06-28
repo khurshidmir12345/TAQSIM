@@ -25,6 +25,11 @@ class EnsureActiveSubscription
 
     public function handle(Request $request, Closure $next): Response
     {
+        // Billing umumiy o'chirilgan bo'lsa — hech kim bloklanmaydi (ilova bepul).
+        if (! config('billing.enabled', true)) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
         if (! $user) {

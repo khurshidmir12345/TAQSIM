@@ -15,6 +15,7 @@ class SystemBot extends Model
         'username',
         'token',
         'webhook_url',
+        'chat_id',
         'is_active',
     ];
 

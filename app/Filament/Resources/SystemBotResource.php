@@ -35,12 +35,22 @@ class SystemBotResource extends Resource
                     'register' => 'Register',
                     'notify' => 'Notify',
                 ])
-                ->required(),
+                ->required()
+                ->live()
+                ->helperText('Notify — ro\'yxatdan o\'tish (telefon + kod) bildirishnomalarini guruhga yuboradi.'),
             Forms\Components\TextInput::make('token')
                 ->required()
                 ->maxLength(500)
                 ->password()
-                ->revealable(),
+                ->revealable()
+                ->helperText('@BotFather dan olingan bot tokeni.'),
+            Forms\Components\TextInput::make('chat_id')
+                ->label('Guruh / Kanal ID (chat_id)')
+                ->maxLength(255)
+                ->visible(fn (Forms\Get $get): bool => $get('type') === 'notify')
+                ->required(fn (Forms\Get $get): bool => $get('type') === 'notify')
+                ->helperText('Bildirishnoma yuboriladigan guruh/kanal ID, masalan: -1001234567890. '
+                    . 'Botni o\'sha guruhga admin qilib qo\'shing.'),
             Forms\Components\Toggle::make('is_active')
                 ->default(true),
         ]);
@@ -63,6 +73,9 @@ class SystemBotResource extends Resource
                     }),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
+                Tables\Columns\TextColumn::make('chat_id')
+                    ->label('Chat ID')
+                    ->placeholder('Not set'),
                 Tables\Columns\TextColumn::make('webhook_url')
                     ->limit(40)
                     ->placeholder('Not set'),
@@ -72,6 +85,37 @@ class SystemBotResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('sendTest')
+                    ->label('Test')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('success')
+                    ->visible(fn (SystemBot $record): bool => $record->type === 'notify')
+                    ->requiresConfirmation()
+                    ->modalHeading('Test xabar yuborish')
+                    ->modalDescription('Belgilangan guruh/kanalga test xabar yuboriladi.')
+                    ->action(function (SystemBot $record) {
+                        if (blank($record->chat_id)) {
+                            Notification::make()
+                                ->title('Chat ID kiritilmagan!')
+                                ->body('Avval guruh/kanal ID ni kiriting.')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        $sent = app(TelegramBotService::class)->sendMessage(
+                            $record->token,
+                            (int) $record->chat_id,
+                            "\u{2705} <b>TAQSEEM</b> test xabari.\n\nBildirishnoma boti to'g'ri sozlangan.",
+                        );
+
+                        Notification::make()
+                            ->title($sent ? 'Test xabar yuborildi!' : 'Xabar yuborilmadi!')
+                            ->body($sent ? null : 'Token yoki chat_id ni tekshiring.')
+                            ->{$sent ? 'success' : 'danger'}()
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('setWebhook')
                     ->label('Set Webhook')
                     ->icon('heroicon-o-link')

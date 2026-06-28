@@ -12,6 +12,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\DeviceService;
 use App\Services\OtpService;
+use App\Services\RegistrationNotifier;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class AuthController extends Controller
         private readonly OtpService $otpService,
         private readonly SmsService $smsService,
         private readonly DeviceService $devices,
+        private readonly RegistrationNotifier $registrationNotifier,
     ) {}
 
     /**
@@ -41,6 +43,9 @@ class AuthController extends Controller
 
         // Send OTP via SMS (direct, no queue)
         $this->smsService->sendOtp($phone, $record->code);
+
+        // Admin Telegram guruhiga xabar (telefon + kod) — fon, auth oqimini buzmaydi.
+        $this->registrationNotifier->notifyOtpRequested($phone, $record->code, $phoneExists);
 
         $message = $phoneExists
             ? __('api.auth.send_code_phone_exists')

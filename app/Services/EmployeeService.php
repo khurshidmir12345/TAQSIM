@@ -103,6 +103,11 @@ class EmployeeService
     /** Bepul o'rin mavjudmi? (limit null — cheksiz). */
     public function hasFreeSlot(User $owner): bool
     {
+        // Billing o'chirilgan bo'lsa — barcha xodim o'rinlari bepul.
+        if (! config('billing.enabled', true)) {
+            return true;
+        }
+
         $plan = $this->limits->effectivePlan($owner);
         $limit = $plan?->max_employees;
 

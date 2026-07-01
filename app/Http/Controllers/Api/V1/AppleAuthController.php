@@ -125,6 +125,10 @@ class AppleAuthController extends Controller
             return $user;
         });
 
+        if ($user->isBlocked()) {
+            return $this->error(__('api.errors.account_blocked'), 403, ['code' => 'account_blocked']);
+        }
+
         // Multi-device: eski sessiyalar saqlanadi.
         $newToken = $user->createToken('mobile');
         $this->devices->record($user, $newToken, $request);

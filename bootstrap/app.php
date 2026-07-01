@@ -23,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->prependToGroup('api', \App\Http\Middleware\SetApiLocale::class);
         $middleware->alias([
-            'subscription' => \App\Http\Middleware\EnsureActiveSubscription::class,
+            'blocked' => \App\Http\Middleware\EnsureUserNotBlocked::class,
             'shop.perm' => \App\Http\Middleware\EnsureShopPermission::class,
         ]);
     })

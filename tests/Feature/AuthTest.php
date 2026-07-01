@@ -111,6 +111,35 @@ class AuthTest extends TestCase
         $response->assertStatus(422);
     }
 
+    public function test_blocked_user_cannot_login(): void
+    {
+        User::factory()->create([
+            'phone' => '+998901111111',
+            'password' => 'password123',
+            'blocked_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'phone' => '+998901111111',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson(['success' => false])
+            ->assertJsonPath('errors.code', 'account_blocked');
+    }
+
+    public function test_blocked_user_is_denied_on_protected_routes(): void
+    {
+        $user = User::factory()->create(['blocked_at' => now()]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/v1/auth/me');
+
+        $response->assertStatus(403)
+            ->assertJson(['success' => false, 'code' => 'account_blocked']);
+    }
+
     public function test_user_can_get_profile(): void
     {
         $user = User::factory()->create();

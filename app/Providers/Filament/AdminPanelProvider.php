@@ -41,7 +41,6 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
                 NavigationGroup::make('Boshqaruv'),
-                NavigationGroup::make('Billing'),
                 NavigationGroup::make('Operatsiyalar'),
                 NavigationGroup::make('Katalog'),
                 NavigationGroup::make('Tizim'),
@@ -54,7 +53,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 StatsOverviewWidget::class,
-                \App\Filament\Widgets\BillingStatsWidget::class,
                 ProductionChartWidget::class,
                 UsersChartWidget::class,
                 LatestShopsWidget::class,

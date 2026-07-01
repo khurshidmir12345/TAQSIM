@@ -175,6 +175,17 @@ class TelegramWebhookController extends Controller
             ]);
         }
 
+        if ($user->isBlocked()) {
+            $this->telegram->sendMessage(
+                $bot->token,
+                $chatId,
+                "\u{1F6AB} <b>Hisobingiz bloklangan.</b>\n\n"
+                . "Ilovaga kirish uchun administrator bilan bog'laning.",
+            );
+
+            return;
+        }
+
         // Multi-device: eski sessiyalar saqlanadi. Webhook Telegram serveridan
         // keladi — haqiqiy qurilma metama'lumoti yo'q, shuning uchun platforma
         // "telegram" deb belgilanadi (foydalanuvchi profilda ko'rib revoke qila oladi).

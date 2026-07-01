@@ -10,17 +10,12 @@ use App\Http\Resources\ShopResource;
 use App\Models\CustomBusinessType;
 use App\Models\Currency;
 use App\Models\Shop;
-use App\Services\PlanLimitService;
-use App\Services\SubscriptionService;
-use App\Traits\EnforcesPlanLimits;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class ShopController extends Controller
 {
-    use EnforcesPlanLimits;
-
     public function index(Request $request): JsonResponse
     {
         $shops = $request->user()
@@ -34,12 +29,8 @@ class ShopController extends Controller
         ]);
     }
 
-    public function store(StoreShopRequest $request, PlanLimitService $limits, SubscriptionService $subscriptions): JsonResponse
+    public function store(StoreShopRequest $request): JsonResponse
     {
-        if (! $limits->canAddShop($request->user())) {
-            return $this->planLimitResponse($limits->info($request->user(), 'shops'), 'shops');
-        }
-
         $currencyId = $request->currency_id
             ?? Currency::where('code', 'UZS')->value('id')
             ?? Currency::first()?->id;
@@ -59,9 +50,6 @@ class ShopController extends Controller
         $request->user()->shops()->attach($shop->id, [
             'user_type' => ShopUserType::Owner,
         ]);
-
-        // Birinchi do'kon ochilganda egaga (owner) trial beriladi (mavjud bo'lsa null).
-        $subscriptions->ensureTrial($request->user());
 
         // "Boshqa" kategoriya uchun custom nomi user_id bilan saqlash
         if ($request->filled('custom_business_type_name')) {

@@ -8,10 +8,7 @@ return [
     'ping' => 'Taqsim API ishlayapti',
 
     'errors' => [
-        'subscription_required' => 'Obuna muddati tugagan. Davom etish uchun tarif tanlang.',
-        'plan_limit_reached' => 'Tarif limiti to‘ldi. Yuqori tarifga o‘ting.',
-        'insufficient_balance' => 'Balansda mablag‘ yetarli emas. Iltimos, balansni to‘ldiring.',
-        'yearly_not_available' => 'Bu tarifda yillik obuna mavjud emas.',
+        'account_blocked' => 'Hisobingiz bloklangan. Iltimos, administrator bilan bog‘laning.',
         'generic' => 'Xatolik',
         'unauthenticated' => 'Avtorizatsiyadan o‘tilmagan.',
         'validation_failed' => 'Ma’lumotlar noto‘g‘ri.',
@@ -64,7 +61,5 @@ return [
         'created' => 'Xodim qo‘shildi.',
         'phone_taken' => 'Bu raqam allaqachon ro‘yxatdan o‘tgan. Boshqa raqam kiriting.',
         'invite_expired' => 'Taklif muddati tugadi. Qaytadan urinib ko‘ring.',
-        'seat_suspended' => 'Xodim o‘rni to‘lovi muddati tugagan. Balansni to‘ldiring.',
-        'owner_subscription_inactive' => 'Biznes egasi obunasi tugagan. Egasi bilan bog‘laning.',
     ],
 ];

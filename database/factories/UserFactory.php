@@ -27,7 +27,6 @@ class UserFactory extends Factory
             'phone_verified_at' => null,
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'balance' => '0.00',
             'is_accepted_policy' => true,
             'avatar_url' => null,
             'locale' => 'uz',

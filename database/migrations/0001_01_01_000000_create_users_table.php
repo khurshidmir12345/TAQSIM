@@ -28,10 +28,10 @@ return new class extends Migration
             // Google
             $table->string('google_id')->nullable()->unique();
 
-            $table->decimal('balance', 15, 2)->default(0);
             $table->boolean('is_accepted_policy')->default(false);
             $table->string('avatar_url', 2048)->nullable();
             $table->string('locale', 10)->nullable();
+            $table->timestamp('blocked_at')->nullable()->comment('Admin tomonidan bloklangan sana');
             $table->timestamps();
             $table->softDeletes();
         });

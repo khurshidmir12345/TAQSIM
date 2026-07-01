@@ -2,11 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\WalletTransactionType;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers\ShopsRelationManager;
 use App\Models\User;
-use App\Services\WalletService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -17,7 +15,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
@@ -91,10 +88,6 @@ class UserResource extends Resource
             Forms\Components\Section::make('Hisob va xavfsizlik')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\TextInput::make('balance')
-                        ->label('Balans')
-                        ->numeric()
-                        ->default(0),
                     Forms\Components\TextInput::make('password')
                         ->label('Parol (yangilash)')
                         ->password()
@@ -119,11 +112,17 @@ class UserResource extends Resource
                     Infolists\Components\TextEntry::make('email')->label('Email')->placeholder('—')->copyable(),
                     Infolists\Components\TextEntry::make('telegram_username')->label('Telegram')->prefix('@')->placeholder('—'),
                     Infolists\Components\TextEntry::make('locale')->label('Til')->placeholder('—'),
-                    Infolists\Components\TextEntry::make('balance')->label('Balans')->numeric(),
                 ]),
             Infolists\Components\Section::make('Holat')
                 ->columns(3)
                 ->schema([
+                    Infolists\Components\IconEntry::make('is_blocked')
+                        ->label('Bloklangan')
+                        ->boolean()
+                        ->state(fn (User $record): bool => $record->isBlocked())
+                        ->trueColor('danger')
+                        ->falseColor('success'),
+                    Infolists\Components\TextEntry::make('blocked_at')->label('Bloklangan sana')->dateTime()->placeholder('—'),
                     Infolists\Components\IconEntry::make('is_accepted_policy')->label('Shartlar qabul qilingan')->boolean(),
                     Infolists\Components\TextEntry::make('phone_verified_at')->label('Telefon tasdiqlangan')->dateTime()->placeholder('Tasdiqlanmagan'),
                     Infolists\Components\TextEntry::make('email_verified_at')->label('Email tasdiqlangan')->dateTime()->placeholder('Tasdiqlanmagan'),
@@ -170,6 +169,14 @@ class UserResource extends Resource
                     ->label('Tasdiqlangan')
                     ->boolean()
                     ->state(fn (User $record): bool => $record->phone_verified_at !== null),
+                Tables\Columns\IconColumn::make('is_blocked')
+                    ->label('Bloklangan')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-lock-closed')
+                    ->falseIcon('heroicon-o-lock-open')
+                    ->trueColor('danger')
+                    ->falseColor('gray')
+                    ->state(fn (User $record): bool => $record->isBlocked()),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Ro\'yxatdan o\'tgan')
                     ->dateTime('d.m.Y H:i')
@@ -189,34 +196,37 @@ class UserResource extends Resource
                     ->label('Telegram ulangan')
                     ->query(fn (Builder $q) => $q->whereNotNull('telegram_chat_id'))
                     ->toggle(),
+                Tables\Filters\Filter::make('is_blocked')
+                    ->label('Bloklangan')
+                    ->query(fn (Builder $q) => $q->whereNotNull('blocked_at'))
+                    ->toggle(),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\Action::make('topUpBalance')
-                    ->label('Balans to\'ldirish')
-                    ->icon('heroicon-o-plus-circle')
-                    ->color('success')
-                    ->form([
-                        Forms\Components\TextInput::make('amount')
-                            ->label('Summa (UZS)')
-                            ->numeric()
-                            ->minValue(0.01)
-                            ->required(),
-                        Forms\Components\TextInput::make('description')
-                            ->label('Izoh')
-                            ->default('Admin tomonidan to\'ldirildi'),
-                    ])
-                    ->action(function (User $record, array $data): void {
-                        app(WalletService::class)->credit(
-                            $record,
-                            (float) $data['amount'],
-                            WalletTransactionType::Topup,
-                            $data['description'] ?? null,
-                            null,
-                            Auth::user(),
-                        );
+                Tables\Actions\Action::make('block')
+                    ->label('Bloklash')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Foydalanuvchini bloklash')
+                    ->modalDescription('Bloklangan foydalanuvchi ilovaga kira olmaydi va joriy sessiyalari tugatiladi.')
+                    ->visible(fn (User $record): bool => ! $record->isBlocked())
+                    ->action(function (User $record): void {
+                        $record->forceFill(['blocked_at' => now()])->save();
+                        $record->tokens()->delete();
 
-                        Notification::make()->title('Balans to\'ldirildi')->success()->send();
+                        Notification::make()->title('Foydalanuvchi bloklandi')->success()->send();
+                    }),
+                Tables\Actions\Action::make('unblock')
+                    ->label('Blokdan chiqarish')
+                    ->icon('heroicon-o-lock-open')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->visible(fn (User $record): bool => $record->isBlocked())
+                    ->action(function (User $record): void {
+                        $record->forceFill(['blocked_at' => null])->save();
+
+                        Notification::make()->title('Foydalanuvchi blokdan chiqarildi')->success()->send();
                     }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

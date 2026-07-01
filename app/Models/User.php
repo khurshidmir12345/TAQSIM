@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -34,10 +33,10 @@ class User extends Authenticatable implements FilamentUser
         'telegram_username',
         'google_id',
         'apple_id',
-        'balance',
         'is_accepted_policy',
         'avatar_url',
         'locale',
+        'blocked_at',
         'email_verified_at',
         'phone_verified_at',
     ];
@@ -52,11 +51,17 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
+            'blocked_at' => 'datetime',
             'password' => 'hashed',
             'telegram_chat_id' => 'integer',
-            'balance' => 'decimal:2',
             'is_accepted_policy' => 'boolean',
         ];
+    }
+
+    /** Foydalanuvchi admin tomonidan bloklanganmi. */
+    public function isBlocked(): bool
+    {
+        return $this->blocked_at !== null;
     }
 
     public function authIdentities(): HasMany
@@ -80,34 +85,6 @@ class User extends Authenticatable implements FilamentUser
     public function ownedShops(): BelongsToMany
     {
         return $this->shops()->wherePivot('user_type', ShopUserType::Owner->value);
-    }
-
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(Subscription::class)->latest();
-    }
-
-    /** Xodim sifatidagi obunalari (owner obunasidan alohida). */
-    public function sellerSubs(): HasMany
-    {
-        return $this->hasMany(SellerSub::class)->latest();
-    }
-
-    public function currentSubscription(): HasOne
-    {
-        return $this->hasOne(Subscription::class)
-            ->where('is_current', true)
-            ->latestOfMany();
-    }
-
-    public function walletTransactions(): HasMany
-    {
-        return $this->hasMany(WalletTransaction::class)->latest();
-    }
-
-    public function orders(): HasMany
-    {
-        return $this->hasMany(Order::class)->latest();
     }
 
     public function canAccessPanel(Panel $panel): bool

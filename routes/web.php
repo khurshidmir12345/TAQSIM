@@ -1,10 +1,8 @@
 <?php
 
 use App\Http\Controllers\Web\AccountDeletionController;
-use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     return view('welcome');
@@ -21,15 +19,6 @@ Route::middleware('throttle:6,1')->group(function () {
     Route::post('/delete-account/confirm',   [AccountDeletionController::class, 'confirm'])
         ->name('account.delete.confirm');
 });
-
-// ── Topup chek rasmi (faqat admin panelга kirgan foydalanuvchilar) ──
-// Chek maxfiy (local) diskда saqlanadi — bu route orqali xavfsiz ko'rsatiladi.
-Route::middleware(['web', 'auth'])->get('/admin/orders/{order}/receipt', function (Order $order) {
-    abort_if($order->receipt_path === null, 404);
-    abort_unless(Storage::disk('local')->exists($order->receipt_path), 404);
-
-    return response()->file(Storage::disk('local')->path($order->receipt_path));
-})->name('admin.orders.receipt');
 
 Route::get('/auth/app-redirect', function (Request $request) {
     $session = (string) $request->query('session', '');

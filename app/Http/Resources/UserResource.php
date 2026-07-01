@@ -21,7 +21,6 @@ class UserResource extends JsonResource
             'google_id' => $this->google_id,
             'apple_id' => $this->apple_id,
             'user_type' => $this->globalUserType(),
-            'balance' => $this->balance,
             'is_accepted_policy' => $this->is_accepted_policy,
             'avatar_url' => $this->resolveAvatarUrl(),
             'locale' => $this->locale,

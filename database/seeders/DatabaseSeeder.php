@@ -20,9 +20,6 @@ class DatabaseSeeder extends Seeder
         $this->call(MeasurementUnitSeeder::class);
         $this->call(CurrencySeeder::class);
         $this->call(SystemBotSeeder::class);
-        $this->call(SubscriptionPlanSeeder::class);
-        $this->call(ExchangeRateSeeder::class);
-        $this->call(AppSettingSeeder::class);
         $this->call(AdminUserSeeder::class);
 
         $owner = User::factory()->create([

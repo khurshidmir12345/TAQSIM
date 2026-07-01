@@ -8,10 +8,7 @@ return [
     'ping' => 'Taqsim API çalışıyor',
 
     'errors' => [
-        'subscription_required' => 'Abonelik süresi doldu. Devam etmek için bir paket seçin.',
-        'plan_limit_reached' => 'Paket limitine ulaşıldı. Daha yüksek bir pakete geçin.',
-        'insufficient_balance' => 'Bakiye yetersiz. Lütfen bakiyenizi yükleyin.',
-        'yearly_not_available' => 'Bu planda yıllık abonelik mevcut değil.',
+        'account_blocked' => 'Hesabınız engellendi. Lütfen yönetici ile iletişime geçin.',
         'generic' => 'Hata',
         'unauthenticated' => 'Oturum açılmadı.',
         'validation_failed' => 'Veriler geçersiz.',
@@ -60,7 +57,5 @@ return [
         'created' => 'Çalışan eklendi.',
         'phone_taken' => 'Bu numara zaten kayıtlı. Başka bir numara girin.',
         'invite_expired' => 'Davet süresi doldu. Tekrar deneyin.',
-        'seat_suspended' => 'Çalışan koltuğu ödeme süresi doldu. Bakiyenizi yükleyin.',
-        'owner_subscription_inactive' => 'Sahibin aboneliği sona erdi. Sahip ile iletişime geçin.',
     ],
 ];

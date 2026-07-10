@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreateTelegramSessionRequest;
 use App\Http\Resources\UserResource;
 use App\Models\SystemBot;
 use App\Models\TelegramAuthSession;
@@ -12,7 +13,7 @@ use Illuminate\Support\Str;
 
 class TelegramAuthController extends Controller
 {
-    public function createSession(): JsonResponse
+    public function createSession(CreateTelegramSessionRequest $request): JsonResponse
     {
         $bot = SystemBot::where('type', 'register')
             ->where('is_active', true)
@@ -24,8 +25,9 @@ class TelegramAuthController extends Controller
 
         $sessionToken = Str::random(48);
 
-        TelegramAuthSession::create([
+        $session = TelegramAuthSession::create([
             'session_token' => $sessionToken,
+            'client_platform' => $request->clientPlatform(),
             'status' => 'pending',
             'expires_at' => now()->addMinutes(10),
         ]);
@@ -33,6 +35,7 @@ class TelegramAuthController extends Controller
         return $this->success([
             'session_token' => $sessionToken,
             'bot_username' => $bot->username,
+            'client_platform' => $session->client_platform,
             'expires_in' => 600,
         ]);
     }

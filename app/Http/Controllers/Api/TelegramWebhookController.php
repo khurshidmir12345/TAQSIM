@@ -6,10 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\SystemBot;
 use App\Models\TelegramAuthSession;
 use App\Models\User;
+use App\Models\UserDevice;
 use App\Services\TelegramBotService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class TelegramWebhookController extends Controller
 {
@@ -82,8 +83,8 @@ class TelegramWebhookController extends Controller
             $bot->token,
             $chatId,
             "Assalomu alaykum, {$firstName}! \u{1F44B}\n\n"
-            . "\u{1F4F2} <b>TAQSEEM</b> ilovasiga kirish uchun telefon raqamingizni yuboring.\n\n"
-            . "Pastdagi tugmani bosing \u{1F447}",
+            ."\u{1F4F2} <b>TAQSEEM</b> ilovasiga kirish uchun telefon raqamingizni yuboring.\n\n"
+            ."Pastdagi tugmani bosing \u{1F447}",
         );
     }
 
@@ -118,7 +119,7 @@ class TelegramWebhookController extends Controller
                 $bot->token,
                 $chatId,
                 "\u{26A0}\u{FE0F} <b>Diqqat!</b>\n\n"
-                . "Bu Telegram hisobi allaqachon boshqa TAQSEEM foydalanuvchisiga bog'langan.",
+                ."Bu Telegram hisobi allaqachon boshqa TAQSEEM foydalanuvchisiga bog'langan.",
             );
 
             return;
@@ -140,71 +141,110 @@ class TelegramWebhookController extends Controller
             $bot->token,
             $chatId,
             "\u{2705} <b>Muvaffaqiyatli ulandi!</b>\n\n"
-            . "Telegram hisobingiz <b>TAQSEEM</b> ilovasiga bog'landi.\n"
-            . "Endi muhim bildirishnomalarni shu yerda olasiz. \u{1F514}\n\n"
-            . "Ilovaga qaytishingiz mumkin. \u{1F4F2}",
+            ."Telegram hisobingiz <b>TAQSEEM</b> ilovasiga bog'landi.\n"
+            ."Endi muhim bildirishnomalarni shu yerda olasiz. \u{1F514}\n\n"
+            ."Ilovaga qaytishingiz mumkin. \u{1F4F2}",
         );
+    }
+
+    /**
+     * Kontakt xavfsizligi: yuborilgan kontakt haqiqatan ham xabar yuborgan
+     * foydalanuvchining o'ziga tegishli bo'lishi shart (Telegram "so'rov
+     * tugmasi" orqali bosilganda buni ta'minlaydi, ammo forward qilingan
+     * begona kontaktlarni rad etish uchun serverda ham tekshiramiz).
+     */
+    private function isOwnContact(array $contact, array $message): bool
+    {
+        $fromId = $message['from']['id'] ?? null;
+        $contactUserId = $contact['user_id'] ?? null;
+
+        if ($fromId === null || $contactUserId === null) {
+            return false;
+        }
+
+        return (int) $contactUserId === (int) $fromId;
     }
 
     private function handleContact(SystemBot $bot, int $chatId, array $contact, array $message): void
     {
-        $phone = $contact['phone_number'];
-        $firstName = $contact['first_name'] ?? $message['from']['first_name'] ?? null;
-        $telegramUsername = $message['from']['username'] ?? null;
-
-        if (! str_starts_with($phone, '+')) {
-            $phone = '+' . $phone;
-        }
-
-        $user = User::where('phone', $phone)->first()
-            ?? User::where('telegram_chat_id', $chatId)->first();
-
-        if (! $user) {
-            $user = User::create([
-                'name' => $firstName,
-                'phone' => $phone,
-                'telegram_chat_id' => $chatId,
-                'telegram_username' => $telegramUsername,
-                'is_accepted_policy' => true,
-                'phone_verified_at' => now(),
-            ]);
-        } else {
-            $user->update([
-                'telegram_chat_id' => $chatId,
-                'telegram_username' => $telegramUsername,
-            ]);
-        }
-
-        if ($user->isBlocked()) {
+        if (! $this->isOwnContact($contact, $message)) {
             $this->telegram->sendMessage(
                 $bot->token,
                 $chatId,
-                "\u{1F6AB} <b>Hisobingiz bloklangan.</b>\n\n"
-                . "Ilovaga kirish uchun administrator bilan bog'laning.",
+                "\u{26A0}\u{FE0F} Faqat <b>o'zingizga tegishli</b> telefon raqamni yuborishingiz mumkin.\n\n"
+                ."Pastdagi tugma orqali o'z raqamingizni yuboring.",
             );
 
             return;
         }
 
-        // Multi-device: eski sessiyalar saqlanadi. Webhook Telegram serveridan
-        // keladi — haqiqiy qurilma metama'lumoti yo'q, shuning uchun platforma
-        // "telegram" deb belgilanadi (foydalanuvchi profilda ko'rib revoke qila oladi).
-        $newToken = $user->createToken('mobile');
-        $token = $newToken->plainTextToken;
-        \App\Models\UserDevice::create([
-            'user_id' => $user->id,
-            'token_id' => $newToken->accessToken->getKey(),
-            'platform' => 'telegram',
-            'last_active_at' => now(),
-        ]);
+        $phone = $contact['phone_number'];
+        if (! str_starts_with($phone, '+')) {
+            $phone = '+'.$phone;
+        }
+        $firstName = $contact['first_name'] ?? $message['from']['first_name'] ?? null;
+        $telegramUsername = $message['from']['username'] ?? null;
 
-        $session = TelegramAuthSession::where('telegram_chat_id', $chatId)
-            ->where('status', 'pending')
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        // Faol (pending, muddati o'tmagan, login turidagi, shu chatga bog'langan)
+        // sessiya bo'lmasa — hisob yaratish yoki token berish umuman amalga
+        // oshmaydi. Qator lokini (lockForUpdate) takroriy contact xabarlarida
+        // (masalan, Telegram'ning qayta yetkazishi) bir nechta token
+        // yaratilishining oldini oladi: ikkinchi so'rov birinchisi tugaguncha
+        // bloklanadi va status endi "pending" bo'lmaganini ko'rib chiqadi.
+        $outcome = DB::transaction(function () use ($chatId, $phone, $firstName, $telegramUsername) {
+            $session = TelegramAuthSession::where('telegram_chat_id', $chatId)
+                ->where('type', 'login')
+                ->where('status', 'pending')
+                ->where('expires_at', '>', now())
+                ->lockForUpdate()
+                ->latest()
+                ->first();
 
-        if ($session) {
+            if (! $session) {
+                return ['result' => 'no_session'];
+            }
+
+            $user = User::where('phone', $phone)->first()
+                ?? User::where('telegram_chat_id', $chatId)->first();
+
+            if (! $user) {
+                $user = User::create([
+                    'name' => $firstName,
+                    'phone' => $phone,
+                    'telegram_chat_id' => $chatId,
+                    'telegram_username' => $telegramUsername,
+                    'is_accepted_policy' => true,
+                    'phone_verified_at' => now(),
+                ]);
+            } else {
+                $user->update([
+                    'telegram_chat_id' => $chatId,
+                    'telegram_username' => $telegramUsername,
+                ]);
+            }
+
+            if ($user->isBlocked()) {
+                $session->update(['status' => 'failed']);
+
+                return ['result' => 'blocked'];
+            }
+
+            // Multi-device: eski sessiyalar saqlanadi. Webhook Telegram
+            // serveridan keladi — haqiqiy qurilma metama'lumoti yo'q, shuning
+            // uchun sessiya platformasiga qarab "web" yoki "telegram" deb
+            // belgilanadi (foydalanuvchi profilda ko'rib revoke qila oladi).
+            $devicePlatform = $session->isWebClient() ? 'web' : 'telegram';
+
+            $newToken = $user->createToken('mobile');
+            $token = $newToken->plainTextToken;
+
+            UserDevice::create([
+                'user_id' => $user->id,
+                'token_id' => $newToken->accessToken->getKey(),
+                'platform' => $devicePlatform,
+                'last_active_at' => now(),
+            ]);
+
             $session->update([
                 'phone' => $phone,
                 'first_name' => $firstName,
@@ -212,21 +252,53 @@ class TelegramWebhookController extends Controller
                 'auth_token' => $token,
                 'status' => 'completed',
             ]);
+
+            return ['result' => 'completed', 'session' => $session];
+        });
+
+        if ($outcome['result'] === 'no_session') {
+            $this->telegram->sendMessage(
+                $bot->token,
+                $chatId,
+                "\u{274C} Faol so'rov topilmadi yoki muddati tugagan. Iltimos, ilovadan qaytadan urinib ko'ring.",
+            );
+
+            return;
         }
 
-        $appRedirectUrl = config('app.url') . '/auth/app-redirect';
-        if ($session) {
-            $appRedirectUrl .= '?session=' . urlencode($session->session_token);
+        if ($outcome['result'] === 'blocked') {
+            $this->telegram->sendMessage(
+                $bot->token,
+                $chatId,
+                "\u{1F6AB} <b>Hisobingiz bloklangan.</b>\n\n"
+                ."Ilovaga kirish uchun administrator bilan bog'laning.",
+            );
+
+            return;
         }
 
         $this->telegram->sendWithInlineButton(
             $bot->token,
             $chatId,
             "\u{2705} <b>Muvaffaqiyatli!</b>\n\n"
-            . "Siz tizimga kirdingiz. Endi ilovaga qaytishingiz mumkin.\n\n"
-            . "Pastdagi tugmani bosing \u{1F447}",
+            ."Siz tizimga kirdingiz. Endi ilovaga qaytishingiz mumkin.\n\n"
+            ."Pastdagi tugmani bosing \u{1F447}",
             "\u{1F4F2} Ilovaga qaytish",
-            $appRedirectUrl,
+            $this->buildReturnUrl($outcome['session']),
         );
+    }
+
+    /**
+     * Muvaffaqiyatli login'dan keyingi "ilovaga qaytish" manzili — faqat
+     * serverda saqlangan sessiya platformasiga qarab hisoblanadi. Klient
+     * tomondan yuborilgan har qanday arbitrary return URL'ga ishonilmaydi.
+     */
+    private function buildReturnUrl(TelegramAuthSession $session): string
+    {
+        if ($session->isWebClient()) {
+            return rtrim((string) config('services.telegram.web_app_url'), '/').'/telegram';
+        }
+
+        return config('app.url').'/auth/app-redirect?session='.urlencode($session->session_token);
     }
 }

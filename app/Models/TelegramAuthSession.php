@@ -13,6 +13,7 @@ class TelegramAuthSession extends Model
     protected $fillable = [
         'session_token',
         'type',
+        'client_platform',
         'telegram_chat_id',
         'phone',
         'first_name',
@@ -48,5 +49,11 @@ class TelegramAuthSession extends Model
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    /** Sessiya web klientdan boshlanganmi (aks holda mobile deb hisoblanadi). */
+    public function isWebClient(): bool
+    {
+        return $this->client_platform === 'web';
     }
 }

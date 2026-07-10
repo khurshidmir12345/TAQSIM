@@ -42,9 +42,9 @@ return new class extends Migration
             $table->foreignUuid('shop_id')->constrained('shops')->cascadeOnDelete();
             $table->enum('user_type', ['owner', 'seller']);
             // Xodim (seller) uchun granular ruxsatlar. null/[] — hech narsa.
-            $table->json('permissions')->nullable()->after('user_type');
+            $table->json('permissions')->nullable();
             // Kim taklif qilgan (owner).
-            $table->foreignUuid('invited_by')->nullable()->after('permissions')
+            $table->foreignUuid('invited_by')->nullable()
                 ->constrained('users')->nullOnDelete();
             $table->timestamps();
 

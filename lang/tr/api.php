@@ -24,6 +24,14 @@ return [
         'invalid_expense_category' => 'Geçersiz gider kategorisi veya size ait değil.',
         'expense_category_duplicate' => 'Bu isimde bir kategori zaten var veya sistem kategorisiyle çakışıyor.',
         'return_production_mismatch' => 'Seçilen parti ürün türü veya tarihle uyuşmuyor.',
+        'customer_has_orders' => 'Bu müşterinin siparişleri var. Önce siparişleri silin veya iptal edin.',
+        'customer_order_customer_required' => 'Müşteri seçin veya yeni müşteri bilgilerini girin.',
+        'order_not_active' => 'Bu işlem yalnızca aktif siparişlerde yapılabilir.',
+        'order_total_below_paid' => 'Yeni tutar, ödenen tutardan az olamaz.',
+        'payment_exceeds_remaining' => 'Ödeme kalan tutarı aşıyor.',
+        'payment_amount_invalid' => 'Ödeme tutarı geçersiz.',
+        'bread_category_not_in_shop' => 'Seçilen ürün bu işletmeye ait değil.',
+        'order_has_payments' => 'Ödemesi olan sipariş silinemez. Bunun yerine iptal edin.',
     ],
 
     'auth' => [

@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\BreadCategoryController;
 use App\Http\Controllers\Api\V1\BusinessTypeController;
 use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\CustomBusinessTypeController;
+use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\CustomerOrderController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
@@ -106,6 +108,20 @@ Route::prefix('v1')->group(function () {
                 ->middleware('shop.perm:manage_expenses');
             Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])
                 ->middleware('shop.perm:manage_expenses');
+
+            Route::apiResource('customers', CustomerController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->middleware('shop.perm:manage_orders,read');
+            Route::prefix('customer-orders')->middleware('shop.perm:manage_orders,read')->group(function () {
+                Route::get('/', [CustomerOrderController::class, 'index']);
+                Route::post('/', [CustomerOrderController::class, 'store']);
+                Route::get('{customer_order}', [CustomerOrderController::class, 'show']);
+                Route::put('{customer_order}', [CustomerOrderController::class, 'update']);
+                Route::delete('{customer_order}', [CustomerOrderController::class, 'destroy']);
+                Route::post('{customer_order}/payments', [CustomerOrderController::class, 'storePayment']);
+                Route::post('{customer_order}/deliver', [CustomerOrderController::class, 'deliver']);
+                Route::post('{customer_order}/cancel', [CustomerOrderController::class, 'cancel']);
+            });
 
             Route::middleware('shop.perm:view_reports,read')->group(function () {
                 Route::get('reports/daily', [ReportController::class, 'daily']);

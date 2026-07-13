@@ -119,4 +119,14 @@ class Shop extends Model
     {
         return $this->hasMany(ExpenseCategory::class);
     }
+
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function customerOrders(): HasMany
+    {
+        return $this->hasMany(CustomerOrder::class);
+    }
 }

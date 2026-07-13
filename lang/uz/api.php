@@ -24,6 +24,14 @@ return [
         'invalid_expense_category' => 'Xarajat turi noto‘g‘ri yoki sizga tegishli emas.',
         'expense_category_duplicate' => 'Bu nom bilan kategoriya allaqachon mavjud yoki tizim kategoriyasi bilan mos keladi.',
         'return_production_mismatch' => 'Tanlangan partiya ushbu mahsulot turi yoki sanaga mos kelmaydi.',
+        'customer_has_orders' => 'Bu mijozda zakazlar mavjud. Avval zakazlarni o‘chiring yoki bekor qiling.',
+        'customer_order_customer_required' => 'Mijozni tanlang yoki yangi mijoz ma’lumotlarini kiriting.',
+        'order_not_active' => 'Faqat faol zakaz ustida bu amal bajariladi.',
+        'order_total_below_paid' => 'Yangi summa allaqachon to‘langan mablag‘dan kam bo‘lishi mumkin emas.',
+        'payment_exceeds_remaining' => 'To‘lov qoldiq summadan oshib ketdi.',
+        'payment_amount_invalid' => 'To‘lov summasi noto‘g‘ri.',
+        'bread_category_not_in_shop' => 'Tanlangan mahsulot ushbu biznesga tegishli emas.',
+        'order_has_payments' => 'To‘lovlar mavjud bo‘lgan zakazni o‘chirib bo‘lmaydi. Uni bekor qiling.',
     ],
 
     'auth' => [

@@ -14,6 +14,7 @@ enum ShopPermission: string
     case ManageProduction = 'manage_production';
     case ManageExpenses = 'manage_expenses';
     case ManageSales = 'manage_sales';
+    case ManageOrders = 'manage_orders';
 
     /** @return array<int,string> */
     public static function values(): array

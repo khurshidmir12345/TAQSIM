@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\InvalidRegistrationCodeException;
+use App\Exceptions\PhoneAlreadyRegisteredException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
@@ -10,6 +12,7 @@ use App\Http\Requests\SendCodeRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AuthService;
 use App\Services\DeviceService;
 use App\Services\OtpService;
 use App\Services\RegistrationNotifier;
@@ -19,10 +22,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
     public function __construct(
+        private readonly AuthService $authService,
         private readonly OtpService $otpService,
         private readonly SmsService $smsService,
         private readonly DeviceService $devices,
@@ -53,7 +58,7 @@ class AuthController extends Controller
 
         return $this->success([
             'phone_exists' => $phoneExists,
-            'expires_in'   => 120,
+            'expires_in' => 120,
         ], $message);
     }
 
@@ -64,38 +69,30 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        $phone = $request->phone;
-
-        // Phone already exists → tell client to redirect to login
-        if (User::where('phone', $phone)->exists()) {
+        try {
+            $user = $this->authService->register(
+                $request->phone,
+                $request->code,
+                $request->name,
+                $request->password,
+            );
+        } catch (PhoneAlreadyRegisteredException) {
             return $this->error(
                 __('api.auth.register_phone_taken'),
                 409,
                 ['phone_exists' => true]
             );
-        }
-
-        // Validate OTP
-        $verified = $this->otpService->validate($phone, $request->code);
-        if (! $verified) {
+        } catch (InvalidRegistrationCodeException) {
             return $this->error(__('api.auth.invalid_code'), 422, [
                 'code' => [__('api.auth.invalid_code')],
             ]);
         }
 
-        $user = User::create([
-            'name'             => $request->name,
-            'phone'            => $phone,
-            'password'         => $request->password,
-            'is_accepted_policy' => true,
-            'phone_verified_at'  => now(),
-        ]);
-
         $newToken = $user->createToken('mobile');
         $this->devices->record($user, $newToken, $request);
 
         return $this->created([
-            'user'  => new UserResource($user),
+            'user' => new UserResource($user),
             'token' => $newToken->plainTextToken,
         ], __('api.auth.register_success'));
     }
@@ -122,7 +119,7 @@ class AuthController extends Controller
         $this->devices->record($user, $newToken, $request);
 
         return $this->success([
-            'user'  => new UserResource($user),
+            'user' => new UserResource($user),
             'token' => $newToken->plainTextToken,
         ], __('api.auth.login_success'));
     }
@@ -162,7 +159,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         // Eski faqat local public disk'dagi fayl bo'lsa tozalaymiz (OAuth URL'lar emas).
-        if ($user->avatar_url && !str_starts_with($user->avatar_url, 'http')) {
+        if ($user->avatar_url && ! str_starts_with($user->avatar_url, 'http')) {
             Storage::disk('public')->delete($user->avatar_url);
         }
 
@@ -181,7 +178,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        if ($user->avatar_url && !str_starts_with($user->avatar_url, 'http')) {
+        if ($user->avatar_url && ! str_starts_with($user->avatar_url, 'http')) {
             Storage::disk('public')->delete($user->avatar_url);
         }
 
@@ -217,9 +214,7 @@ class AuthController extends Controller
      */
     public function deleteAccount(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $user->tokens()->delete();
-        $user->delete();
+        $this->authService->deleteAccount($request->user());
 
         return $this->success(null, __('api.auth.account_deleted'));
     }
@@ -233,7 +228,7 @@ class AuthController extends Controller
         // PersonalAccessToken bo'lsa o'chiriladi; TransientToken (test/oddiy
         // guard) bo'lsa o'tkazib yuboriladi.
         $token = $request->user()->currentAccessToken();
-        if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+        if ($token instanceof PersonalAccessToken) {
             $token->delete();
         }
 

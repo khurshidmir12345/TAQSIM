@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\JwtClaimParser;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Cache;
@@ -20,6 +21,7 @@ use RuntimeException;
 class AppleAuthService
 {
     private const CACHE_KEY = 'apple_jwks_keys_v1';
+
     private const CACHE_TTL = 60 * 60 * 24; // 24h
 
     /**
@@ -56,12 +58,17 @@ class AppleAuthService
             throw new RuntimeException('Apple identity token has no subject', 401);
         }
 
+        $email = JwtClaimParser::parseEmail($payloadArr['email'] ?? null);
+        $emailVerified = JwtClaimParser::parseEmailVerified($payloadArr['email_verified'] ?? null);
+
+        if ($email === null) {
+            $emailVerified = false;
+        }
+
         return [
             'sub' => $sub,
-            'email' => isset($payloadArr['email']) && is_string($payloadArr['email'])
-                ? strtolower($payloadArr['email'])
-                : null,
-            'email_verified' => filter_var($payloadArr['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'email' => $email,
+            'email_verified' => $emailVerified,
             'raw' => $payloadArr,
         ];
     }

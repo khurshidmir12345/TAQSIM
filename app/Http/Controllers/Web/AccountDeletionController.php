@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuthService;
 use App\Services\OtpService;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
@@ -24,6 +24,7 @@ use Illuminate\View\View;
 class AccountDeletionController extends Controller
 {
     public function __construct(
+        private readonly AuthService $authService,
         private readonly OtpService $otpService,
         private readonly SmsService $smsService,
     ) {}
@@ -64,6 +65,7 @@ class AccountDeletionController extends Controller
                 'phone' => $phone,
                 'error' => $e->getMessage(),
             ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Kod yuborishda xatolik. Iltimos, biroz keyin qayta urinib ko\'ring.',
@@ -71,8 +73,8 @@ class AccountDeletionController extends Controller
         }
 
         return response()->json([
-            'success'    => true,
-            'message'    => 'Tasdiqlash kodi yuborildi.',
+            'success' => true,
+            'message' => 'Tasdiqlash kodi yuborildi.',
             'expires_in' => 120,
         ]);
     }
@@ -81,7 +83,7 @@ class AccountDeletionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'phone' => ['required', 'string', 'regex:/^\+?\d{9,15}$/'],
-            'code'  => ['required', 'string', 'digits:4'],
+            'code' => ['required', 'string', 'digits:4'],
             'agree' => ['accepted'],
         ], [
             'agree.accepted' => 'Akkauntni o\'chirish shartlariga rozilik bering.',
@@ -95,7 +97,7 @@ class AccountDeletionController extends Controller
         }
 
         $phone = $this->normalizePhone($request->input('phone'));
-        $code  = $request->input('code');
+        $code = $request->input('code');
 
         $verified = $this->otpService->validate($phone, $code);
         if (! $verified) {
@@ -116,15 +118,13 @@ class AccountDeletionController extends Controller
         $userId = $user->id;
 
         try {
-            DB::transaction(function () use ($user) {
-                $user->tokens()->delete();
-                $user->delete();
-            });
+            $this->authService->deleteAccount($user);
         } catch (\Throwable $e) {
             Log::error('AccountDeletion deletion failed', [
                 'user_id' => $userId,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Akkauntni o\'chirib bo\'lmadi. Yordam uchun: support@taqseem.uz',
@@ -133,8 +133,8 @@ class AccountDeletionController extends Controller
 
         Log::info('Account deleted via public web form', [
             'user_id' => $userId,
-            'phone'   => $phone,
-            'ip'      => $request->ip(),
+            'phone' => $phone,
+            'ip' => $request->ip(),
         ]);
 
         return response()->json([
@@ -152,14 +152,14 @@ class AccountDeletionController extends Controller
         $digits = preg_replace('/\D+/', '', $raw);
 
         if (str_starts_with($digits, '998')) {
-            return '+' . $digits;
+            return '+'.$digits;
         }
 
         // Foydalanuvchi to'g'ridan-to'g'ri "+998..." yozgan bo'lsa
         if (str_starts_with($raw, '+')) {
-            return '+' . $digits;
+            return '+'.$digits;
         }
 
-        return '+' . $digits;
+        return '+'.$digits;
     }
 }

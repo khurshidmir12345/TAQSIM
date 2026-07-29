@@ -53,6 +53,7 @@ return [
         'apple_login_success' => 'Apple ID orqali tizimga kirdingiz.',
         'google_invalid_token' => 'Google identifikatsiya tokeni yaroqsiz yoki muddati o‘tgan.',
         'google_login_success' => 'Google orqali tizimga kirdingiz.',
+        'social_auth_conflict' => 'Bu ijtimoiy tarmoq hisobi boshqa foydalanuvchiga bog‘langan yoki vaqtincha band.',
     ],
 
     'shop' => [

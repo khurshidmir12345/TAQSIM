@@ -63,6 +63,19 @@ return [
         | u hamon `/auth/app-redirect` deep-link sahifasidan foydalanadi.
         */
         'web_app_url' => env('WEB_APP_URL', 'https://web.taqseem.uz'),
+
+        /*
+        |--------------------------------------------------------------------
+        | Register bot (SystemBotSeeder)
+        |--------------------------------------------------------------------
+        | Token faqat .env orqali beriladi. Bo'sh bo'lsa seeder bot yozuvini
+        | yaratmaydi va mavjud production tokenni o'zgartirmaydi.
+        */
+        'register_bot' => [
+            'token' => env('TELEGRAM_REGISTER_BOT_TOKEN'),
+            'name' => env('TELEGRAM_REGISTER_BOT_NAME', 'TAQSEEM Register Bot'),
+            'username' => env('TELEGRAM_REGISTER_BOT_USERNAME', 't_register_bot'),
+        ],
     ],
 
     'google' => [

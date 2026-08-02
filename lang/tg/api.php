@@ -27,6 +27,14 @@ return [
         'invalid_expense_category' => 'Навъи харҷ нодуруст аст ё ба шумо тааллуқ надорад.',
         'expense_category_duplicate' => 'Бо ин ном категория аллакай мавҷуд аст ё бо категорияи система мувофиқ аст.',
         'return_production_mismatch' => 'Партияи интихобшуда ба намуди маҳсулот ё сана мувофиқ нест.',
+        'customer_has_orders' => 'Ин мизоҷ фармоишҳо дорад. Аввал фармоишҳоро нест кунед ё бекор кунед.',
+        'customer_order_customer_required' => 'Мизоҷро интихоб кунед ё маълумоти мизоҷи навро ворид кунед.',
+        'order_not_active' => 'Ин амал танҳо барои фармоиши фаол иҷро мешавад.',
+        'order_total_below_paid' => 'Маблағи нав наметавонад аз маблағи пардохтшуда камтар бошад.',
+        'payment_exceeds_remaining' => 'Пардохт аз маблағи боқимонда зиёд аст.',
+        'payment_amount_invalid' => 'Маблағи пардохт нодуруст аст.',
+        'bread_category_not_in_shop' => 'Маҳсулоти интихобшуда ба ин бизнес тааллуқ надорад.',
+        'order_has_payments' => 'Фармоише, ки пардохт дорад, нест карда намешавад. Онро бекор кунед.',
     ],
 
     'auth' => [
@@ -44,6 +52,10 @@ return [
         'account_deleted' => 'Ҳисоб нест шуд.',
         'logout_success' => 'Шумо баромадед.',
         'device_revoked' => 'Дастгоҳ хориҷ карда шуд.',
+        'apple_invalid_token' => 'Токени Apple нодуруст ё мӯҳлаташ гузаштааст.',
+        'apple_login_success' => 'Бо Apple ID ворид шудед.',
+        'google_invalid_token' => 'Токени Google нодуруст ё мӯҳлаташ гузаштааст.',
+        'google_login_success' => 'Бо Google ворид шудед.',
     ],
 
     'shop' => [

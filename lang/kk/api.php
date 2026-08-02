@@ -27,6 +27,14 @@ return [
         'invalid_expense_category' => 'Шығын түрі дұрыс емес немесе сізге тиесілі емес.',
         'expense_category_duplicate' => 'Бұл атаумен категория бар немесе жүйелік категориямен сәйкес келеді.',
         'return_production_mismatch' => 'Таңдалған партия өнім түріне немесе күнге сәйкес емес.',
+        'customer_has_orders' => 'Бұл клиентте тапсырыстар бар. Алдымен тапсырыстарды жойыңыз немесе болдырмаңыз.',
+        'customer_order_customer_required' => 'Клиентті таңдаңыз немесе жаңа клиент деректерін енгізіңіз.',
+        'order_not_active' => 'Бұл әрекет тек белсенді тапсырыс үшін орындалады.',
+        'order_total_below_paid' => 'Жаңа сома төленген сомадан аз болмауы керек.',
+        'payment_exceeds_remaining' => 'Төлем қалған сомадан асып кетті.',
+        'payment_amount_invalid' => 'Төлем сомасы дұрыс емес.',
+        'bread_category_not_in_shop' => 'Таңдалған өнім бұл бизнеске тиесілі емес.',
+        'order_has_payments' => 'Төлемдері бар тапсырысты жоюға болмайды. Оны болдырмаңыз.',
     ],
 
     'auth' => [
@@ -44,6 +52,10 @@ return [
         'account_deleted' => 'Аккаунт жойылды.',
         'logout_success' => 'Жүйеден шықтыңыз.',
         'device_revoked' => 'Құрылғы шығарылды.',
+        'apple_invalid_token' => 'Apple идентификация токені жарамсыз немесе мерзімі өткен.',
+        'apple_login_success' => 'Apple ID арқылы жүйеге кірдіңіз.',
+        'google_invalid_token' => 'Google идентификация токені жарамсыз немесе мерзімі өткен.',
+        'google_login_success' => 'Google арқылы жүйеге кірдіңіз.',
     ],
 
     'shop' => [

@@ -14,19 +14,20 @@ class BusinessTypeResource extends JsonResource
             ?? $this->detectLocale($request->header('Accept-Language', 'uz'));
 
         return [
-            'id'          => $this->id,
-            'key'         => $this->key,
-            'icon'        => $this->icon,
-            'color'       => $this->color,
-            'sort_order'  => $this->sort_order,
-            'name'        => $this->getLocalizedName($locale),
-            'names'       => [
-                'uz'      => $this->name_uz,
+            'id' => $this->id,
+            'key' => $this->key,
+            'icon' => $this->icon,
+            'color' => $this->color,
+            'sort_order' => $this->sort_order,
+            'name' => $this->getLocalizedName($locale),
+            'names' => [
+                'uz' => $this->name_uz,
                 'uz_CYRL' => $this->name_uz_cyrl,
-                'ru'      => $this->name_ru,
-                'kk'      => $this->name_kk,
-                'ky'      => $this->name_ky,
-                'tr'      => $this->name_tr,
+                'ru' => $this->name_ru,
+                'kk' => $this->name_kk,
+                'ky' => $this->name_ky,
+                'tr' => $this->name_tr,
+                'en' => $this->name_en,
             ],
             'terminology' => $this->terminology,
         ];
@@ -34,9 +35,10 @@ class BusinessTypeResource extends JsonResource
 
     private function detectLocale(string $header): string
     {
-        $supported = ['uz', 'uz_CYRL', 'ru', 'kk', 'ky', 'tr'];
+        $supported = ['uz', 'uz_CYRL', 'ru', 'kk', 'ky', 'tr', 'en'];
         $lang = strtolower(explode(',', explode(';', $header)[0])[0]);
         $lang = str_replace('-', '_', $lang);
+
         return in_array($lang, $supported) ? $lang : 'uz';
     }
 }

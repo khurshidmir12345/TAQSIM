@@ -35,7 +35,7 @@ class Shop extends Model
     {
         return [
             'is_active' => 'boolean',
-            'latitude'  => 'float',
+            'latitude' => 'float',
             'longitude' => 'float',
         ];
     }
@@ -118,5 +118,15 @@ class Shop extends Model
     public function expenseCategories(): HasMany
     {
         return $this->hasMany(ExpenseCategory::class);
+    }
+
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function customerOrders(): HasMany
+    {
+        return $this->hasMany(CustomerOrder::class);
     }
 }

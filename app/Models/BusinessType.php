@@ -22,15 +22,16 @@ class BusinessType extends Model
         'name_kk',
         'name_ky',
         'name_tr',
+        'name_en',
         'terminology',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active'   => 'boolean',
+            'is_active' => 'boolean',
             'terminology' => 'array',
-            'sort_order'  => 'integer',
+            'sort_order' => 'integer',
         ];
     }
 
@@ -46,12 +47,13 @@ class BusinessType extends Model
     public function getLocalizedName(string $locale = 'uz'): string
     {
         $map = [
-            'uz'      => $this->name_uz,
+            'uz' => $this->name_uz,
             'uz_CYRL' => $this->name_uz_cyrl ?? $this->name_uz,
-            'ru'      => $this->name_ru,
-            'kk'      => $this->name_kk ?? $this->name_ru,
-            'ky'      => $this->name_ky ?? $this->name_ru,
-            'tr'      => $this->name_tr ?? $this->name_uz,
+            'ru' => $this->name_ru,
+            'kk' => $this->name_kk ?? $this->name_ru,
+            'ky' => $this->name_ky ?? $this->name_ru,
+            'tr' => $this->name_tr ?? $this->name_uz,
+            'en' => $this->name_en ?? $this->name_uz,
         ];
 
         return $map[$locale] ?? $this->name_uz;
@@ -64,6 +66,7 @@ class BusinessType extends Model
     public function getTerminology(string $locale = 'uz'): array
     {
         $term = $this->terminology ?? [];
+
         return $term[$locale] ?? $term['uz'] ?? [];
     }
 

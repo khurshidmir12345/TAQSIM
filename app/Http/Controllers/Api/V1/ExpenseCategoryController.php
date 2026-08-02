@@ -16,7 +16,7 @@ class ExpenseCategoryController extends BaseShopController
         $this->authorizeShop($request, $shop);
 
         $locale = $request->query('locale', 'uz');
-        $allowed = ['uz', 'ru', 'kk', 'ky', 'tr', 'uz_CYRL'];
+        $allowed = ['uz', 'ru', 'kk', 'ky', 'tr', 'uz_CYRL', 'en'];
         if (! in_array($locale, $allowed, true)) {
             $locale = 'uz';
         }

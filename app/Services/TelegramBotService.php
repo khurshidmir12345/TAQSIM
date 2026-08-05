@@ -35,6 +35,84 @@ class TelegramBotService
         return true;
     }
 
+    /**
+     * Foydalanuvchi xabarini guruhga forward qiladi (matn, rasm, ovoz — hammasi).
+     *
+     * @return int|null guruhdagi yangi xabar ID'si; admin unga reply qiladi
+     */
+    public function forwardMessage(string $token, int $toChatId, int $fromChatId, int $messageId): ?int
+    {
+        $response = Http::post(self::API_BASE.$token.'/forwardMessage', [
+            'chat_id' => $toChatId,
+            'from_chat_id' => $fromChatId,
+            'message_id' => $messageId,
+        ]);
+
+        if (! $response->successful()) {
+            Log::error('Telegram forwardMessage failed', [
+                'to' => $toChatId,
+                'from' => $fromChatId,
+                'response' => $response->body(),
+            ]);
+
+            return null;
+        }
+
+        $id = $response->json('result.message_id');
+
+        return $id === null ? null : (int) $id;
+    }
+
+    /**
+     * Mavjud xabarga reply qilib javob yuboradi.
+     */
+    public function replyToMessage(string $token, int $chatId, int $replyToMessageId, string $text): bool
+    {
+        $response = Http::post(self::API_BASE.$token.'/sendMessage', [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+            'reply_to_message_id' => $replyToMessageId,
+        ]);
+
+        if (! $response->successful()) {
+            Log::error('Telegram replyToMessage failed', [
+                'chat_id' => $chatId,
+                'response' => $response->body(),
+            ]);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Guruh adminlarining Telegram user ID'lari.
+     *
+     * @return array<int,int> xato bo'lsa bo'sh massiv
+     */
+    public function getChatAdministrators(string $token, int $chatId): array
+    {
+        $response = Http::get(self::API_BASE.$token.'/getChatAdministrators', [
+            'chat_id' => $chatId,
+        ]);
+
+        if (! $response->successful()) {
+            Log::warning('Telegram getChatAdministrators failed', [
+                'chat_id' => $chatId,
+                'response' => $response->body(),
+            ]);
+
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            static fn (array $a): ?int => isset($a['user']['id']) ? (int) $a['user']['id'] : null,
+            $response->json('result') ?? [],
+        )));
+    }
+
     public function setWebhook(string $token, string $url): array
     {
         $response = Http::post(self::API_BASE . $token . '/setWebhook', [

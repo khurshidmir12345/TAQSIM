@@ -7,6 +7,7 @@ use App\Models\SystemBot;
 use App\Models\TelegramAuthSession;
 use App\Models\User;
 use App\Models\UserDevice;
+use App\Services\SupportRelayService;
 use App\Services\TelegramBotService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class TelegramWebhookController extends Controller
 {
     public function __construct(
         private readonly TelegramBotService $telegram,
+        private readonly SupportRelayService $support,
     ) {}
 
     public function handle(Request $request, string $botToken): JsonResponse
@@ -30,6 +32,13 @@ class TelegramWebhookController extends Controller
 
         $update = $request->all();
 
+        // Bot guruhga qo'shildi yoki chiqarildi — guruhlar ro'yxati yangilanadi.
+        if (isset($update['my_chat_member'])) {
+            $this->support->syncChatMembership($bot, $update['my_chat_member']);
+
+            return response()->json(['ok' => true]);
+        }
+
         if (isset($update['message'])) {
             $this->processMessage($bot, $update['message']);
         }
@@ -39,6 +48,17 @@ class TelegramWebhookController extends Controller
 
     private function processMessage(SystemBot $bot, array $message): void
     {
+        $chatType = $message['chat']['type'] ?? 'private';
+
+        // Guruhdagi xabarlardan faqat support reply'lari qiziqtiradi.
+        if ($chatType !== 'private') {
+            if ($this->support->isSupportGroup($bot, (int) $message['chat']['id'])) {
+                $this->support->relayFromAdmin($bot, $message);
+            }
+
+            return;
+        }
+
         $chatId = $message['chat']['id'];
 
         if (isset($message['contact'])) {
@@ -50,7 +70,28 @@ class TelegramWebhookController extends Controller
         $text = $message['text'] ?? '';
 
         if (str_starts_with($text, '/start')) {
-            $this->handleStart($bot, $chatId, $text, $message);
+            // Login oqimi faqat ro'yxatdan o'tish botiga tegishli.
+            if ($bot->type === 'register') {
+                $this->handleStart($bot, $chatId, $text, $message);
+
+                return;
+            }
+
+            $this->telegram->sendMessage(
+                $bot->token,
+                $chatId,
+                "Assalomu alaykum! \u{1F44B}\n\n"
+                ."Bu — <b>TAQSEEM</b> qo'llab-quvvatlash xizmati.\n"
+                ."Savolingizni shu yerga yozing, tez orada javob beramiz. \u{1F4AC}",
+            );
+
+            return;
+        }
+
+        // Ro'yxatdan o'tish boti login oqimini boshqaradi; boshqa botlarda
+        // shaxsiy xabar support savoli deb qaraladi.
+        if ($bot->type !== 'register') {
+            $this->support->relayFromUser($bot, $message);
         }
     }
 

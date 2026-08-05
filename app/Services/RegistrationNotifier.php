@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BotChat;
 use App\Models\Shop;
 use App\Models\SystemBot;
 use App\Models\User;
@@ -35,7 +36,13 @@ class RegistrationNotifier
                 . "\u{1F511} Kod: <code>{$code}</code>\n"
                 . "\u{1F551} " . now()->format('d.m.Y H:i');
 
-            $this->telegram->sendMessage($bot->token, (int) $bot->chat_id, $text);
+            $chatId = $this->notifyChatId($bot);
+
+            if ($chatId === null) {
+                return;
+            }
+
+            $this->telegram->sendMessage($bot->token, $chatId, $text);
         } catch (\Throwable $e) {
             Log::warning('RegistrationNotifier failed', [
                 'phone' => $phone,
@@ -75,7 +82,13 @@ class RegistrationNotifier
                 . "\u{1F511} Kod: <code>{$code}</code>\n"
                 . "\u{1F551} " . now()->format('d.m.Y H:i');
 
-            $this->telegram->sendMessage($bot->token, (int) $bot->chat_id, $text);
+            $chatId = $this->notifyChatId($bot);
+
+            if ($chatId === null) {
+                return;
+            }
+
+            $this->telegram->sendMessage($bot->token, $chatId, $text);
         } catch (\Throwable $e) {
             Log::warning('RegistrationNotifier employee invite failed', [
                 'phone' => $employeePhone,
@@ -89,9 +102,29 @@ class RegistrationNotifier
         return SystemBot::query()
             ->where('type', 'notify')
             ->where('is_active', true)
-            ->whereNotNull('chat_id')
             ->latest()
             ->first();
+    }
+
+    /**
+     * Bildirishnoma yuboriladigan guruh ID'si.
+     *
+     * Avval `bot_chats` dagi `notify` guruhi qaraladi (bot bir nechta guruhda
+     * bo'lishi mumkin), topilmasa eski `system_bots.chat_id` ustuni ishlatiladi
+     * — shunda migratsiyagacha bo'lgan sozlama ham ishlashda davom etadi.
+     */
+    private function notifyChatId(SystemBot $bot): ?int
+    {
+        $chat = BotChat::query()
+            ->where('system_bot_id', $bot->id)
+            ->active()
+            ->purpose(BotChat::PURPOSE_NOTIFY)
+            ->latest()
+            ->first();
+
+        $chatId = $chat->chat_id ?? $bot->chat_id;
+
+        return $chatId === null || trim((string) $chatId) === '' ? null : (int) $chatId;
     }
 
     /**

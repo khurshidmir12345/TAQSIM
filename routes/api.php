@@ -110,7 +110,7 @@ Route::prefix('v1')->group(function () {
                 ->middleware('shop.perm:manage_expenses');
 
             Route::apiResource('customers', CustomerController::class)
-                ->only(['index', 'store', 'update', 'destroy'])
+                ->only(['index', 'store', 'show', 'update', 'destroy'])
                 ->middleware('shop.perm:manage_orders,read');
             Route::prefix('customer-orders')->middleware('shop.perm:manage_orders,read')->group(function () {
                 Route::get('/', [CustomerOrderController::class, 'index']);

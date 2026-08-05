@@ -39,6 +39,7 @@ class EmployeeService
 
         $record = $this->otp->generate($phone);
         $this->sendOtp($phone, $record->code);
+        $this->notifyInvite($owner, $shop, $name, $phone, $record->code);
 
         Cache::put($this->pendingKey($shop, $phone), [
             'name' => $name,
@@ -142,5 +143,21 @@ class EmployeeService
     private function sendOtp(string $phone, string $code): void
     {
         app(SmsService::class)->sendOtp($phone, $code);
+    }
+
+    /**
+     * Admin Telegram guruhiga xabar — kim kimni xodim qilmoqchi va qaysi kod
+     * yuborilgani. Notifier ichida barcha xatolik yutiladi, ya'ni Telegram
+     * ishlamasa ham xodim qo'shish oqimi buzilmaydi.
+     */
+    private function notifyInvite(
+        User $owner,
+        Shop $shop,
+        string $name,
+        string $phone,
+        string $code,
+    ): void {
+        app(RegistrationNotifier::class)
+            ->notifyEmployeeInvite($owner, $shop, $name, $phone, $code);
     }
 }

@@ -19,7 +19,7 @@ class CustomerController extends BaseShopController
         $query = $shop->customers()->getQuery();
 
         if ($request->filled('search')) {
-            $search = '%' . $request->query('search') . '%';
+            $search = '%'.$request->query('search').'%';
             $query->where(function ($builder) use ($search): void {
                 $builder->where('name', 'like', $search)
                     ->orWhere('phone', 'like', $search);
@@ -52,6 +52,19 @@ class CustomerController extends BaseShopController
         $customer = $shop->customers()->create($data);
 
         return $this->created([
+            'customer' => new CustomerResource($customer),
+        ]);
+    }
+
+    public function show(Request $request, Shop $shop, Customer $customer): JsonResponse
+    {
+        $this->authorizeShop($request, $shop);
+
+        if ($customer->shop_id !== $shop->id) {
+            abort(404);
+        }
+
+        return $this->success([
             'customer' => new CustomerResource($customer),
         ]);
     }

@@ -19,6 +19,7 @@ class SetApiLocale
         'kk',
         'ky',
         'tr',
+        'en',
     ];
 
     public function handle(Request $request, Closure $next): Response
@@ -49,6 +50,10 @@ class SetApiLocale
 
         if (str_starts_with($lower, 'uz')) {
             return 'uz';
+        }
+
+        if (str_starts_with($lower, 'en')) {
+            return 'en';
         }
 
         return config('app.locale');

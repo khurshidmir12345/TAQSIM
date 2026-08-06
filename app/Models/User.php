@@ -36,6 +36,7 @@ class User extends Authenticatable implements FilamentUser
         'is_accepted_policy',
         'avatar_url',
         'locale',
+        'notification_prefs',
         'blocked_at',
         'email_verified_at',
         'phone_verified_at',
@@ -55,6 +56,7 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'telegram_chat_id' => 'integer',
             'is_accepted_policy' => 'boolean',
+            'notification_prefs' => 'array',
         ];
     }
 

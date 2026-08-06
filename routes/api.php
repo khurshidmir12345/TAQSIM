@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\GoogleAuthController;
 use App\Http\Controllers\Api\V1\IngredientController;
 use App\Http\Controllers\Api\V1\MeasurementUnitController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OnboardingController;
 use App\Http\Controllers\Api\V1\ProductionController;
 use App\Http\Controllers\Api\V1\RecipeController;
@@ -77,6 +78,19 @@ Route::prefix('v1')->group(function () {
         // ── Qurilmalar (multi-device sessiya boshqaruvi) ────────────
         Route::get('/auth/devices', [DeviceController::class, 'index']);
         Route::delete('/auth/devices/{device}', [DeviceController::class, 'destroy']);
+
+        // ── Bildirishnomalar ───────────────────────────────────────
+        // Diqqat: `preferences`, `unread-count`, `read-all` va `push-token`
+        // {notification} parametridan OLDIN turishi shart, aks holda ular
+        // ID sifatida ushlanib qolardi.
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unread']);
+        Route::get('/notifications/preferences', [NotificationController::class, 'preferences']);
+        Route::put('/notifications/preferences', [NotificationController::class, 'updatePreferences']);
+        Route::post('/notifications/push-token', [NotificationController::class, 'registerPushToken']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+        Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
 
         // ── Telegram Connect (mavjud foydalanuvchiga bog'lash) ──────
         Route::post('/auth/telegram/connect-session', [TelegramAuthController::class, 'createConnectSession']);

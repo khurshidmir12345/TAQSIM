@@ -22,6 +22,8 @@ class UserDevice extends Model
         'token_id',
         'device_name',
         'platform',
+        'push_token',
+        'push_token_updated_at',
         'app_version',
         'ip',
         'last_active_at',
@@ -31,6 +33,7 @@ class UserDevice extends Model
     {
         return [
             'last_active_at' => 'datetime',
+            'push_token_updated_at' => 'datetime',
         ];
     }
 

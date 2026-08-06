@@ -96,4 +96,19 @@ return [
         'issuers' => ['https://accounts.google.com', 'accounts.google.com'],
     ],
 
+    'fcm' => [
+        /*
+        |--------------------------------------------------------------------
+        | Firebase Cloud Messaging (push)
+        |--------------------------------------------------------------------
+        | Firebase Console → Project settings → Service accounts →
+        | "Generate new private key" orqali olingan JSON fayl yo'li.
+        |
+        | Fayl `storage/app/firebase/` ichida turadi — u papka git'dan
+        | chetlangan (`storage/app/.gitignore`) va web orqali ochilmaydi.
+        | Fayl bo'lmasa push jimgina o'tkazib yuboriladi, ilova buzilmaydi.
+        */
+        'credentials' => env('FIREBASE_CREDENTIALS', storage_path('app/firebase/service-account.json')),
+    ],
+
 ];

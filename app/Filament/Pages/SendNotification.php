@@ -5,13 +5,14 @@ namespace App\Filament\Pages;
 use App\Jobs\SendBulkNotification;
 use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
@@ -56,26 +57,19 @@ class SendNotification extends Page implements HasForms
                     ->live()
                     ->required(),
 
-                Select::make('user_ids')
+                // Ro'yxat sifatida — hamma darhol ko'rinadi, qidiruv va
+                // "hammasini belgilash" tugmasi bor.
+                CheckboxList::make('user_ids')
                     ->label('Foydalanuvchilar')
-                    ->multiple()
+                    ->options(fn (): array => self::userOptions())
                     ->searchable()
-                    ->preload()
-                    ->getSearchResultsUsing(fn (string $search): array => User::query()
-                        ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%"))
-                        ->limit(50)
-                        ->get()
-                        ->mapWithKeys(fn (User $u): array => [$u->id => "{$u->name} — {$u->phone}"])
-                        ->all())
-                    ->getOptionLabelsUsing(fn (array $values): array => User::query()
-                        ->whereIn('id', $values)
-                        ->get()
-                        ->mapWithKeys(fn (User $u): array => [$u->id => "{$u->name} — {$u->phone}"])
-                        ->all())
-                    ->visible(fn (callable $get): bool => $get('target') === 'user')
-                    ->required(fn (callable $get): bool => $get('target') === 'user')
-                    ->helperText('Ism yoki telefon bo\'yicha qidiring.'),
+                    ->bulkToggleable()
+                    ->columns(2)
+                    ->gridDirection('row')
+                    ->visible(fn (Get $get): bool => $get('target') === 'user')
+                    ->required(fn (Get $get): bool => $get('target') === 'user')
+                    ->helperText('Bir nechtasini belgilashingiz mumkin. '
+                        .'Qidiruvdan ism yoki telefon bo\'yicha topasiz.'),
 
                 TextInput::make('title')
                     ->label('Sarlavha')
@@ -130,6 +124,24 @@ class SendNotification extends Page implements HasForms
             ->send();
 
         $this->form->fill(['target' => $data['target']]);
+    }
+
+    /**
+     * Bloklanmagan foydalanuvchilar: `id => "Ism · telefon"`.
+     * Ismi yo'qlar ham ro'yxatda qolsin — telefon bo'yicha tanish mumkin.
+     *
+     * @return array<string,string>
+     */
+    private static function userOptions(): array
+    {
+        return User::query()
+            ->whereNull('blocked_at')
+            ->orderByRaw('name IS NULL, name')
+            ->get(['id', 'name', 'phone'])
+            ->mapWithKeys(fn (User $u): array => [
+                $u->id => trim(($u->name ?: '—').' · '.$u->phone),
+            ])
+            ->all();
     }
 
     private function confirmationText(): string

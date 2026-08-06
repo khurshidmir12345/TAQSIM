@@ -91,7 +91,11 @@ class SendNotification extends Page implements HasForms
             ->statePath('data');
     }
 
-    protected function getFormActions(): array
+    /**
+     * Yuborish tugmasi sahifa sarlavhasida turadi — Filament uni o'zi
+     * chizadi va tasdiqlash oynasini ham o'zi boshqaradi.
+     */
+    protected function getHeaderActions(): array
     {
         return [
             Action::make('send')
@@ -101,7 +105,7 @@ class SendNotification extends Page implements HasForms
                 ->modalHeading('Bildirishnoma yuborilsinmi?')
                 ->modalDescription(fn (): string => $this->confirmationText())
                 ->modalSubmitActionLabel('Ha, yuborilsin')
-                ->action('send'),
+                ->action(fn () => $this->send()),
         ];
     }
 
@@ -130,7 +134,7 @@ class SendNotification extends Page implements HasForms
 
     private function confirmationText(): string
     {
-        $state = $this->form->getRawState();
+        $state = is_array($this->data) ? $this->data : [];
 
         if (($state['target'] ?? 'all') === 'all') {
             $count = User::query()->whereNull('blocked_at')->count();

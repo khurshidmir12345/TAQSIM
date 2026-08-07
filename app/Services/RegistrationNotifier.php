@@ -2,32 +2,24 @@
 
 namespace App\Services;
 
-use App\Models\BotChat;
+use App\Jobs\SendAdminTelegramMessage;
 use App\Models\Shop;
-use App\Models\SystemBot;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Ro'yxatdan o'tish va xodim taklifi urinishlari (telefon + kod) haqida admin
- * Telegram guruhiga xabar yuboradi. Aktiv 'notify' turidagi botdan foydalanadi.
- * Har qanday xatolik yutib yuboriladi — asosiy oqimni buzmaydi.
+ * Ro'yxatdan o'tish va xodim taklifi (telefon + kod) haqida admin Telegram
+ * guruhiga xabar tayyorlaydi va NAVBATGA qo'yadi.
+ *
+ * Yuborishning o'zi [SendAdminTelegramMessage] jobida bo'ladi — shunda
+ * Telegram sekinlashsa ham foydalanuvchining kirish/ro'yxatdan o'tish so'rovi
+ * kutib qolmaydi. Har qanday xatolik yutiladi, asosiy oqim buzilmaydi.
  */
 class RegistrationNotifier
 {
-    public function __construct(
-        private readonly TelegramBotService $telegram,
-    ) {}
-
     public function notifyOtpRequested(string $phone, string $code, bool $phoneExists): void
     {
         try {
-            $bot = $this->notifyBot();
-
-            if (! $bot) {
-                return;
-            }
-
             $status = $phoneExists ? "\u{1F501} Mavjud foydalanuvchi" : "\u{1F195} Yangi ro'yxatdan o'tish";
 
             $text = "\u{1F4F2} <b>TAQSEEM — kirish kodi</b>\n\n"
@@ -36,13 +28,7 @@ class RegistrationNotifier
                 . "\u{1F511} Kod: <code>{$code}</code>\n"
                 . "\u{1F551} " . now()->format('d.m.Y H:i');
 
-            $chatId = $this->notifyChatId($bot);
-
-            if ($chatId === null) {
-                return;
-            }
-
-            $this->telegram->sendMessage($bot->token, $chatId, $text);
+            SendAdminTelegramMessage::dispatch($text);
         } catch (\Throwable $e) {
             Log::warning('RegistrationNotifier failed', [
                 'phone' => $phone,
@@ -62,12 +48,6 @@ class RegistrationNotifier
         string $code,
     ): void {
         try {
-            $bot = $this->notifyBot();
-
-            if (! $bot) {
-                return;
-            }
-
             $ownerName = $this->esc($owner->name ?: '—');
             $ownerPhone = $this->esc($owner->phone ?: '—');
             $shopName = $this->esc($shop->name ?: '—');
@@ -82,13 +62,7 @@ class RegistrationNotifier
                 . "\u{1F511} Kod: <code>{$code}</code>\n"
                 . "\u{1F551} " . now()->format('d.m.Y H:i');
 
-            $chatId = $this->notifyChatId($bot);
-
-            if ($chatId === null) {
-                return;
-            }
-
-            $this->telegram->sendMessage($bot->token, $chatId, $text);
+            SendAdminTelegramMessage::dispatch($text);
         } catch (\Throwable $e) {
             Log::warning('RegistrationNotifier employee invite failed', [
                 'phone' => $employeePhone,
@@ -97,35 +71,7 @@ class RegistrationNotifier
         }
     }
 
-    private function notifyBot(): ?SystemBot
-    {
-        return SystemBot::query()
-            ->where('type', 'notify')
-            ->where('is_active', true)
-            ->latest()
-            ->first();
-    }
 
-    /**
-     * Bildirishnoma yuboriladigan guruh ID'si.
-     *
-     * Avval `bot_chats` dagi `notify` guruhi qaraladi (bot bir nechta guruhda
-     * bo'lishi mumkin), topilmasa eski `system_bots.chat_id` ustuni ishlatiladi
-     * — shunda migratsiyagacha bo'lgan sozlama ham ishlashda davom etadi.
-     */
-    private function notifyChatId(SystemBot $bot): ?int
-    {
-        $chat = BotChat::query()
-            ->where('system_bot_id', $bot->id)
-            ->active()
-            ->purpose(BotChat::PURPOSE_NOTIFY)
-            ->latest()
-            ->first();
-
-        $chatId = $chat->chat_id ?? $bot->chat_id;
-
-        return $chatId === null || trim((string) $chatId) === '' ? null : (int) $chatId;
-    }
 
     /**
      * Xabar `parse_mode=HTML` bilan ketadi — foydalanuvchi kiritgan nomlarda

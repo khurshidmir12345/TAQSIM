@@ -22,6 +22,11 @@ class FcmService
 
     private const TOKEN_CACHE_KEY = 'fcm:access_token';
 
+    /** Tashqi xizmat osilib qolsa so'rov cho'zilib ketmasin. */
+    private const TIMEOUT = 10;
+
+    private const CONNECT_TIMEOUT = 3;
+
     /** Access token 1 soat yashaydi — 55 daqiqa keshlaymiz. */
     private const TOKEN_TTL = 3300;
 
@@ -57,7 +62,9 @@ class FcmService
             return self::FAILED;
         }
 
-        $response = Http::withToken($accessToken)
+        $response = Http::timeout(self::TIMEOUT)
+            ->connectTimeout(self::CONNECT_TIMEOUT)
+            ->withToken($accessToken)
             ->post("https://fcm.googleapis.com/v1/projects/{$credentials['project_id']}/messages:send", [
                 'message' => [
                     'token' => $deviceToken,
@@ -146,7 +153,10 @@ class FcmService
             'exp' => $now + 3600,
         ], $credentials['private_key'], 'RS256');
 
-        $response = Http::asForm()->post(self::OAUTH_URL, [
+        $response = Http::timeout(self::TIMEOUT)
+            ->connectTimeout(self::CONNECT_TIMEOUT)
+            ->asForm()
+            ->post(self::OAUTH_URL, [
             'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
             'assertion' => $jwt,
         ]);

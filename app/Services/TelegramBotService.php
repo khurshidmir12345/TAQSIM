@@ -9,6 +9,23 @@ class TelegramBotService
 {
     private const API_BASE = 'https://api.telegram.org/bot';
 
+    /**
+     * Telegram javob bermay qolsa so'rov osilib qolmasin.
+     *
+     * Bu chaqiruvlar auth oqimida ham ishlatiladi (ro'yxatdan o'tish kodi
+     * admin guruhga yuboriladi). Laravel'ning standart 30 soniyasi mobil
+     * ilovaning 15 soniyalik chegarasidan oshib ketardi va foydalanuvchi
+     * "Ulanish vaqti tugadi" xatosini ko'rardi.
+     */
+    private const TIMEOUT = 5;
+
+    private const CONNECT_TIMEOUT = 3;
+
+    private function http(): \Illuminate\Http\Client\PendingRequest
+    {
+        return Http::timeout(self::TIMEOUT)->connectTimeout(self::CONNECT_TIMEOUT);
+    }
+
     public function sendMessage(string $token, int $chatId, string $text, ?array $replyMarkup = null): bool
     {
         $payload = [
@@ -21,7 +38,7 @@ class TelegramBotService
             $payload['reply_markup'] = json_encode($replyMarkup);
         }
 
-        $response = Http::post(self::API_BASE . $token . '/sendMessage', $payload);
+        $response = $this->http()->post(self::API_BASE . $token . '/sendMessage', $payload);
 
         if (! $response->successful()) {
             Log::error('Telegram sendMessage failed', [
@@ -42,7 +59,7 @@ class TelegramBotService
      */
     public function forwardMessage(string $token, int $toChatId, int $fromChatId, int $messageId): ?int
     {
-        $response = Http::post(self::API_BASE.$token.'/forwardMessage', [
+        $response = $this->http()->post(self::API_BASE.$token.'/forwardMessage', [
             'chat_id' => $toChatId,
             'from_chat_id' => $fromChatId,
             'message_id' => $messageId,
@@ -68,7 +85,7 @@ class TelegramBotService
      */
     public function replyToMessage(string $token, int $chatId, int $replyToMessageId, string $text): bool
     {
-        $response = Http::post(self::API_BASE.$token.'/sendMessage', [
+        $response = $this->http()->post(self::API_BASE.$token.'/sendMessage', [
             'chat_id' => $chatId,
             'text' => $text,
             'parse_mode' => 'HTML',
@@ -94,7 +111,7 @@ class TelegramBotService
      */
     public function getChatAdministrators(string $token, int $chatId): array
     {
-        $response = Http::get(self::API_BASE.$token.'/getChatAdministrators', [
+        $response = $this->http()->get(self::API_BASE.$token.'/getChatAdministrators', [
             'chat_id' => $chatId,
         ]);
 
@@ -115,7 +132,7 @@ class TelegramBotService
 
     public function setWebhook(string $token, string $url): array
     {
-        $response = Http::post(self::API_BASE . $token . '/setWebhook', [
+        $response = $this->http()->post(self::API_BASE . $token . '/setWebhook', [
             'url' => $url,
         ]);
 

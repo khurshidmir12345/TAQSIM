@@ -23,6 +23,7 @@ return [
         'server_error' => 'Sunucu hatası.',
         'invalid_expense_category' => 'Geçersiz gider kategorisi veya size ait değil.',
         'expense_category_duplicate' => 'Bu isimde bir kategori zaten var veya sistem kategorisiyle çakışıyor.',
+        'expense_category_in_use' => 'Bu kategori mevcut kayıtlarda kullanılıyor — önce onları değiştirin.',
         'return_production_mismatch' => 'Seçilen parti ürün türü veya tarihle uyuşmuyor.',
         'customer_has_orders' => 'Bu müşterinin siparişleri var. Önce siparişleri silin veya iptal edin.',
         'customer_order_customer_required' => 'Müşteri seçin veya yeni müşteri bilgilerini girin.',

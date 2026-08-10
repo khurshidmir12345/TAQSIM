@@ -136,6 +136,10 @@ Route::prefix('v1')->group(function () {
                 ->middleware('shop.perm:manage_expenses');
             Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])
                 ->middleware('shop.perm:manage_expenses');
+            Route::put('expense-categories/{category}', [ExpenseCategoryController::class, 'update'])
+                ->middleware('shop.perm:manage_expenses');
+            Route::delete('expense-categories/{category}', [ExpenseCategoryController::class, 'destroy'])
+                ->middleware('shop.perm:manage_expenses');
 
             Route::apiResource('customers', CustomerController::class)
                 ->only(['index', 'store', 'show', 'update', 'destroy'])

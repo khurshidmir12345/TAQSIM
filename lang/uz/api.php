@@ -23,6 +23,7 @@ return [
         'server_error' => 'Serverda xatolik yuz berdi.',
         'invalid_expense_category' => 'Xarajat turi noto‘g‘ri yoki sizga tegishli emas.',
         'expense_category_duplicate' => 'Bu nom bilan kategoriya allaqachon mavjud yoki tizim kategoriyasi bilan mos keladi.',
+        'expense_category_in_use' => 'Bu kategoriya yozuvlarda ishlatilgan — avval ularni o‘zgartiring.',
         'return_production_mismatch' => 'Tanlangan partiya ushbu mahsulot turi yoki sanaga mos kelmaydi.',
         'customer_has_orders' => 'Bu mijozda zakazlar mavjud. Avval zakazlarni o‘chiring yoki bekor qiling.',
         'customer_order_customer_required' => 'Mijozni tanlang yoki yangi mijoz ma’lumotlarini kiriting.',

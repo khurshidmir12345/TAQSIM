@@ -26,6 +26,7 @@ return [
         'server_error' => 'A server error occurred.',
         'invalid_expense_category' => 'Invalid expense category or it does not belong to you.',
         'expense_category_duplicate' => 'A category with this name already exists or conflicts with a system category.',
+        'expense_category_in_use' => 'This category is used by existing entries — change them first.',
         'return_production_mismatch' => 'The selected batch does not match this product type or date.',
         'customer_has_orders' => 'This customer has orders. Delete or cancel the orders first.',
         'customer_order_customer_required' => 'Select a customer or enter new customer details.',

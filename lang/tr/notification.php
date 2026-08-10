@@ -11,13 +11,13 @@ return [
     'daily_greeting' => [
         'title' => 'Günaydın!',
         'bodies' => [
-            'Yeni bir gün başlıyor — işleriniz bereketli olsun.',
-            'Günaydın! Bugün müşteriniz bol, satışınız bol olsun.',
-            'Yeni gün, yeni fırsat. Bol şans!',
-            'Bugün için planladığınız her şey gerçekleşsin!',
-            'Günaydın! Verimli bir gün geçirin.',
-            'Ekmeğiniz sıcak, satışınız bol olsun. İyi günler!',
-            'Günaydın! Bugün de işleriniz yolunda gitsin.',
+            'TAQSEEM ekibi size bugünkü iş gününüz için güzel bir moral ve bereket diler!',
+            'TAQSEEM ekibi size bugün bol müşteri ve kolay satışlar diler!',
+            'TAQSEEM ekibi bugün için planladığınız her şeyin gerçekleşmesini diler!',
+            'TAQSEEM ekibi size verimli bir çalışma ve huzurlu bir gün diler!',
+            'TAQSEEM ekibi ekmeğinizin sıcak, satışınızın bol olmasını diler!',
+            'TAQSEEM ekibi size sağlık, şans ve bereket diler!',
+            'TAQSEEM ekibi bugün de işlerinizin yolunda gitmesini diler!',
         ],
     ],
 

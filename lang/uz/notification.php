@@ -11,13 +11,13 @@ return [
     'daily_greeting' => [
         'title' => 'Xayrli tong!',
         'bodies' => [
-            'Yangi kun muborak! Bugungi ishlaringiz barakali bo‘lsin.',
-            'Xayrli tong! Bugun mijozlaringiz ko‘p, savdongiz ravon bo‘lsin.',
-            'Yangi kun — yangi imkoniyat. Rizqingiz keng bo‘lsin!',
-            'Ishingizga baraka! Bugungi rejalaringiz amalga oshsin.',
-            'Xayrli tong! Mehnatingiz serunum, kuningiz xayrli bo‘lsin.',
-            'Non issiq, savdo shirin bo‘lsin. Kuningiz muborak!',
-            'Xayrli tong! Bugun ham ishingiz o‘ngidan kelsin.',
+            'TAQSEEM jamoasi sizga bugungi ish kuningiz uchun yaxshi kayfiyat va baraka tilaydi!',
+            'TAQSEEM jamoasi sizga bugun ko‘p mijoz va ravon savdo tilaydi!',
+            'TAQSEEM jamoasi bugungi rejalaringiz amalga oshishini tilaydi. Ishingizga baraka!',
+            'TAQSEEM jamoasi sizga serunum mehnat va xotirjam kun tilaydi!',
+            'TAQSEEM jamoasi noningiz issiq, savdongiz shirin bo‘lishini tilaydi!',
+            'TAQSEEM jamoasi sizga sog‘lik, omad va keng rizq tilaydi!',
+            'TAQSEEM jamoasi bugun ham ishingiz o‘ngidan kelishini tilaydi!',
         ],
     ],
 

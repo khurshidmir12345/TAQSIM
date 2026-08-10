@@ -11,6 +11,7 @@ use App\Services\FcmService;
 use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class NotificationTest extends TestCase
@@ -249,7 +250,7 @@ class NotificationTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('mandatoryCategories')]
+    #[DataProvider('mandatoryCategories')]
     public function test_mandatory_categories_are_delivered_when_disabled(
         NotificationCategory $category,
     ): void {
@@ -281,7 +282,7 @@ class NotificationTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('optionalCategories')]
+    #[DataProvider('optionalCategories')]
     public function test_optional_categories_stop_when_disabled(
         NotificationCategory $category,
     ): void {

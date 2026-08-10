@@ -2,17 +2,11 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Widgets\LatestShopsWidget;
-use App\Filament\Widgets\LatestUsersWidget;
-use App\Filament\Widgets\ProductionChartWidget;
-use App\Filament\Widgets\StatsOverviewWidget;
-use App\Filament\Widgets\UsersChartWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationGroup;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -40,24 +34,20 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
+                NavigationGroup::make('Statistika'),
                 NavigationGroup::make('Boshqaruv'),
                 NavigationGroup::make('Operatsiyalar'),
                 NavigationGroup::make('Katalog'),
                 NavigationGroup::make('Tizim'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+            // Dashboard va statistika sahifalari shu yerdan topiladi. Filament'ning
+            // o'z Dashboard'i ro'yxatga qo'shilmaydi — `App\Filament\Pages\Dashboard`
+            // uning o'rnini egallaydi va bosh sahifa yo'lini (`/`) o'zi oladi.
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
-            ->pages([
-                Pages\Dashboard::class,
-            ])
+            // Vidjetlar sahifa darajasida tanlanadi (`Page::getWidgets()`) —
+            // shuning uchun bu yerda umumiy ro'yxat berilmaydi.
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                StatsOverviewWidget::class,
-                ProductionChartWidget::class,
-                UsersChartWidget::class,
-                LatestShopsWidget::class,
-                LatestUsersWidget::class,
-            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

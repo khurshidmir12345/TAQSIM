@@ -13,6 +13,8 @@ use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\Shop;
 use App\Models\User;
+use App\Services\NotificationService;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
@@ -84,7 +86,7 @@ class ScheduledNotificationTest extends TestCase
         $owner = $this->makeMember($shop);
         $seller = $this->makeMember($shop, ShopUserType::Seller);
 
-        (new SendDailyGreetings)->handle(app(\App\Services\NotificationService::class));
+        (new SendDailyGreetings)->handle(app(NotificationService::class));
 
         foreach ([$owner, $seller] as $user) {
             $this->assertDatabaseHas('app_notifications', [
@@ -98,7 +100,7 @@ class ScheduledNotificationTest extends TestCase
     {
         $loner = User::factory()->create(['locale' => 'uz']);
 
-        (new SendDailyGreetings)->handle(app(\App\Services\NotificationService::class));
+        (new SendDailyGreetings)->handle(app(NotificationService::class));
 
         $this->assertDatabaseMissing('app_notifications', ['user_id' => $loner->id]);
     }
@@ -111,7 +113,7 @@ class ScheduledNotificationTest extends TestCase
 
         $on = $this->makeMember($shop);
 
-        (new SendDailyGreetings)->handle(app(\App\Services\NotificationService::class));
+        (new SendDailyGreetings)->handle(app(NotificationService::class));
 
         // O'chirgan foydalanuvchining ro'yxati ham to'lib ketmasligi kerak.
         $this->assertDatabaseMissing('app_notifications', ['user_id' => $off->id]);
@@ -124,7 +126,7 @@ class ScheduledNotificationTest extends TestCase
         $user = $this->makeMember($shop);
         $user->update(['locale' => 'ru']);
 
-        (new SendDailyGreetings)->handle(app(\App\Services\NotificationService::class));
+        (new SendDailyGreetings)->handle(app(NotificationService::class));
 
         $notification = AppNotification::where('user_id', $user->id)->firstOrFail();
 
@@ -143,7 +145,7 @@ class ScheduledNotificationTest extends TestCase
         $this->makeOrder($shop, $this->today());
         $this->makeOrder($shop, $this->today());
 
-        (new SendOrderReminders)->handle(app(\App\Services\NotificationService::class));
+        (new SendOrderReminders)->handle(app(NotificationService::class));
 
         $notification = AppNotification::query()
             ->where('user_id', $member->id)
@@ -163,7 +165,7 @@ class ScheduledNotificationTest extends TestCase
         $this->makeOrder($shop, $this->today(), CustomerOrderStatus::Cancelled);
         $this->makeOrder($shop, $this->today(), CustomerOrderStatus::Delivered);
 
-        (new SendOrderReminders)->handle(app(\App\Services\NotificationService::class));
+        (new SendOrderReminders)->handle(app(NotificationService::class));
 
         $this->assertDatabaseMissing('app_notifications', [
             'user_id' => $member->id,
@@ -181,7 +183,7 @@ class ScheduledNotificationTest extends TestCase
 
         $this->makeOrder($busy, $this->today());
 
-        (new SendOrderReminders)->handle(app(\App\Services\NotificationService::class));
+        (new SendOrderReminders)->handle(app(NotificationService::class));
 
         $this->assertDatabaseHas('app_notifications', [
             'user_id' => $busyMember->id,
@@ -201,7 +203,7 @@ class ScheduledNotificationTest extends TestCase
 
         $this->makeOrder($shop, $this->today());
 
-        (new SendOrderReminders)->handle(app(\App\Services\NotificationService::class));
+        (new SendOrderReminders)->handle(app(NotificationService::class));
 
         $this->assertDatabaseMissing('app_notifications', [
             'user_id' => $off->id,
@@ -224,7 +226,7 @@ class ScheduledNotificationTest extends TestCase
 
     public function test_schedule_runs_at_the_agreed_local_times(): void
     {
-        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+        $events = collect(app(Schedule::class)->events())
             ->mapWithKeys(fn ($e) => [$e->command => $e]);
 
         $reminder = $events->first(fn ($e) => str_contains($e->command, 'notifications:order-reminder'));

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\V1\AppleAuthController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BreadCategoryController;
+use App\Http\Controllers\Api\V1\CashController;
 use App\Http\Controllers\Api\V1\BusinessTypeController;
 use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\CustomBusinessTypeController;
@@ -118,6 +119,19 @@ Route::prefix('v1')->group(function () {
                 ->middleware('shop.perm:manage_sales');
             Route::apiResource('expenses', ExpenseController::class)
                 ->middleware('shop.perm:manage_expenses');
+            // ── Kassa ────────────────────────────────────────────────
+            // Aniq yo'llar {entry} parametridan OLDIN turishi shart, aks holda
+            // "settings" yozuv id'si deb qabul qilinardi.
+            Route::prefix('cash')->middleware('shop.perm:manage_expenses')->group(function () {
+                Route::get('/', [CashController::class, 'index']);
+                Route::get('settings', [CashController::class, 'settings']);
+                Route::put('settings', [CashController::class, 'updateSettings']);
+                Route::get('income-categories', [CashController::class, 'incomeCategories']);
+                Route::post('/', [CashController::class, 'store']);
+                Route::put('{entry}', [CashController::class, 'update']);
+                Route::delete('{entry}', [CashController::class, 'destroy']);
+            });
+
             Route::get('expense-categories', [ExpenseCategoryController::class, 'index'])
                 ->middleware('shop.perm:manage_expenses');
             Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])

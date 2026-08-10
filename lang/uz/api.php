@@ -71,4 +71,8 @@ return [
         'phone_taken' => 'Bu raqam allaqachon ro‘yxatdan o‘tgan. Boshqa raqam kiriting.',
         'invite_expired' => 'Taklif muddati tugadi. Qaytadan urinib ko‘ring.',
     ],
+
+    'cash' => [
+        'auto_entry_readonly' => 'Bu yozuv mahsulot chiqimi yoki vozvratdan avtomatik olingan — uni asosiy sahifadan o‘zgartiring.',
+    ],
 ];

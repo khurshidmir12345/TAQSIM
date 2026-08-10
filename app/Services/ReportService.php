@@ -92,7 +92,12 @@ class ReportService
         $externalExpenses = (float) $expenses->sum('amount');
         $totalExpenses = $ingredientCost + $externalExpenses;
 
-        $profit = $netSales - $totalExpenses;
+        // Asosiy sahifa faqat ishlab chiqarish va vozvrat haqida gapiradi:
+        // foyda netto sotuvdan xom ashyo qiymatini ayirib topiladi. Tashqi
+        // xarajatlar (ijara, yoqilg'i va h.k.) kassaning ishi — ular bu yerda
+        // hisobga olinsa, bir kun ijara to'langani uchun nonvoyxona zarar
+        // ko'rsatgandek ko'rinardi.
+        $profit = $netSales - $ingredientCost;
 
         $expensesByCategory = $expenses->groupBy('category')
             ->map(fn ($group) => (float) $group->sum('amount'))

@@ -29,12 +29,16 @@ class Shop extends Model
         'latitude',
         'longitude',
         'is_active',
+        'cash_track_production',
+        'cash_track_returns',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'cash_track_production' => 'boolean',
+            'cash_track_returns' => 'boolean',
             'latitude'  => 'float',
             'longitude' => 'float',
         ];
@@ -108,6 +112,11 @@ class Shop extends Model
     public function breadReturns(): HasMany
     {
         return $this->hasMany(BreadReturn::class);
+    }
+
+    public function cashTransactions(): HasMany
+    {
+        return $this->hasMany(CashTransaction::class);
     }
 
     public function expenses(): HasMany

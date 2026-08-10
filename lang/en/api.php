@@ -75,4 +75,8 @@ return [
         'seat_suspended' => 'Employee seat payment expired. Please top up the balance.',
         'owner_subscription_inactive' => 'Business owner subscription expired. Contact the owner.',
     ],
+
+    'cash' => [
+        'auto_entry_readonly' => 'This entry comes from a production or return record — edit it on the main page.',
+    ],
 ];

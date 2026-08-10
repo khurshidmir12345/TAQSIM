@@ -66,4 +66,8 @@ return [
         'phone_taken' => 'Bu numara zaten kayıtlı. Başka bir numara girin.',
         'invite_expired' => 'Davet süresi doldu. Tekrar deneyin.',
     ],
+
+    'cash' => [
+        'auto_entry_readonly' => 'Bu kayıt üretim veya iade kaydından otomatik oluşturuldu — ana sayfadan düzenleyin.',
+    ],
 ];

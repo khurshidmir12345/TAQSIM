@@ -34,7 +34,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
-                NavigationGroup::make('Statistika'),
                 NavigationGroup::make('Boshqaruv'),
                 NavigationGroup::make('Operatsiyalar'),
                 NavigationGroup::make('Katalog'),

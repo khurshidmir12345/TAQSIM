@@ -3,9 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\Dashboard;
-use App\Filament\Pages\Statistics\ActiveUsersStats;
-use App\Filament\Pages\Statistics\ConfiguredNotStartedStats;
-use App\Filament\Pages\Statistics\NewUsersStats;
+use App\Filament\Pages\Statistics;
 use App\Filament\Widgets\Statistics\ActiveUsersChartWidget;
 use App\Filament\Widgets\Statistics\ConfiguredNotStartedChartWidget;
 use App\Filament\Widgets\Statistics\NewUsersChartWidget;
@@ -410,24 +408,20 @@ class UserStatisticsTest extends TestCase
         ]));
     }
 
-    /**
-     * @return array<string,array{0:class-string}>
-     */
-    public static function statisticsPages(): array
-    {
-        return [
-            'yangi foydalanuvchilar' => [NewUsersStats::class],
-            'faol foydalanuvchilar' => [ActiveUsersStats::class],
-            'sozlagan, ishlamagan' => [ConfiguredNotStartedStats::class],
-        ];
-    }
-
-    #[DataProvider('statisticsPages')]
-    public function test_statistics_page_renders(string $page): void
+    public function test_statistics_page_shows_all_three_charts(): void
     {
         $this->actingAsAdmin();
 
-        Livewire::test($page)->assertOk();
+        Livewire::test(Statistics::class)->assertOk();
+
+        $this->assertSame(
+            [
+                NewUsersChartWidget::class,
+                ActiveUsersChartWidget::class,
+                ConfiguredNotStartedChartWidget::class,
+            ],
+            (new Statistics)->getWidgets(),
+        );
     }
 
     /**

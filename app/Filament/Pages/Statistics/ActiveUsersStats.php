@@ -3,7 +3,6 @@
 namespace App\Filament\Pages\Statistics;
 
 use App\Filament\Widgets\Statistics\ActiveUsersChartWidget;
-use App\Filament\Widgets\Statistics\ActiveUsersOverviewWidget;
 
 class ActiveUsersStats extends StatisticsPage
 {
@@ -17,16 +16,8 @@ class ActiveUsersStats extends StatisticsPage
 
     protected static string $routePath = 'statistika/faol-foydalanuvchilar';
 
-    public function getSubheading(): string
-    {
-        return 'Faollik kirim (ishlab chiqarish) yoki vozvrat yozuvi yaratilganidan aniqlanadi.';
-    }
-
     public function getWidgets(): array
     {
-        return [
-            ActiveUsersOverviewWidget::class,
-            ActiveUsersChartWidget::class,
-        ];
+        return [ActiveUsersChartWidget::class];
     }
 }

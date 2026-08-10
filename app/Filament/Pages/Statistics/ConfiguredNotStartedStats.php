@@ -3,8 +3,6 @@
 namespace App\Filament\Pages\Statistics;
 
 use App\Filament\Widgets\Statistics\ConfiguredNotStartedChartWidget;
-use App\Filament\Widgets\Statistics\ConfiguredNotStartedOverviewWidget;
-use App\Filament\Widgets\Statistics\ConfiguredNotStartedTableWidget;
 
 class ConfiguredNotStartedStats extends StatisticsPage
 {
@@ -18,17 +16,8 @@ class ConfiguredNotStartedStats extends StatisticsPage
 
     protected static string $routePath = 'statistika/sozlagan-ishlamagan';
 
-    public function getSubheading(): string
-    {
-        return 'Mahsulot, xom ashyo yoki retsept kiritilgan, ammo birorta kirim, vozvrat, xarajat va zakaz yo\'q.';
-    }
-
     public function getWidgets(): array
     {
-        return [
-            ConfiguredNotStartedOverviewWidget::class,
-            ConfiguredNotStartedChartWidget::class,
-            ConfiguredNotStartedTableWidget::class,
-        ];
+        return [ConfiguredNotStartedChartWidget::class];
     }
 }

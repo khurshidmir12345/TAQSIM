@@ -73,15 +73,6 @@ final class UserStatisticsService
         return $this->tally($timestamps, $period, $from, $to);
     }
 
-    /** Davr ichida o'chirilgan hisoblar soni. */
-    public function deletedUsers(string $from, string $to): int
-    {
-        return User::query()
-            ->onlyTrashed()
-            ->whereBetween('deleted_at', $this->range($from, $to))
-            ->count();
-    }
-
     /**
      * Faol foydalanuvchilar — kirim (ishlab chiqarish) yoki vozvrat yozuvini
      * YARATGANLAR. Yozuvning biznes sanasi emas, yaratilgan vaqti olinadi:
@@ -115,31 +106,6 @@ final class UserStatisticsService
         }
 
         return array_map(count(...), $seen);
-    }
-
-    /**
-     * Davr davomida kamida bir marta faol bo'lgan noyob foydalanuvchilar.
-     *
-     * Kataklar yig'indisidan farq qiladi — bir odam bir necha kun faol
-     * bo'lsa, bu yerda bir marta sanaladi.
-     */
-    public function activeUsersTotal(string $from, string $to): int
-    {
-        $range = $this->range($from, $to);
-        $ids = [];
-
-        foreach ([Production::class, BreadReturn::class] as $model) {
-            $model::query()
-                ->whereBetween('created_at', $range)
-                ->whereNotNull('created_by')
-                ->distinct()
-                ->pluck('created_by')
-                ->each(function ($id) use (&$ids): void {
-                    $ids[(string) $id] = true;
-                });
-        }
-
-        return count($ids);
     }
 
     /**
@@ -183,23 +149,6 @@ final class UserStatisticsService
         $timestamps = $this->configuredNotStartedQuery($from, $to)->pluck('created_at');
 
         return $this->tally($timestamps, $period, $from, $to);
-    }
-
-    /** Sozlab, ishni boshlamagan do'kon egalari soni. */
-    public function configuredNotStartedOwners(): int
-    {
-        return $this->configuredNotStartedQuery()->count();
-    }
-
-    /**
-     * Davr ichida yaratilgan do'konlar (ishni boshlaganlar bilan solishtirish
-     * uchun) — foizni to'g'ri chiqarish uchun kerak.
-     */
-    public function shopsCreated(string $from, string $to): int
-    {
-        return Shop::query()
-            ->whereBetween('created_at', $this->range($from, $to))
-            ->count();
     }
 
     /**

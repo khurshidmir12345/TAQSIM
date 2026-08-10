@@ -2,24 +2,21 @@
 
 namespace App\Filament\Widgets\Statistics;
 
-use App\Filament\Widgets\Statistics\Concerns\ReadsStatisticsFilters;
+use App\Filament\Widgets\Statistics\Concerns\HasPeriodFilter;
 use App\Services\Admin\UserStatisticsService;
 use Filament\Widgets\ChartWidget;
 
 class NewUsersChartWidget extends ChartWidget
 {
-    use ReadsStatisticsFilters;
+    use HasPeriodFilter;
 
-    protected static ?int $sort = 2;
+    public ?string $filter = UserStatisticsService::DAILY;
 
-    protected static ?string $maxHeight = '320px';
+    protected static ?string $heading = 'Yangi foydalanuvchilar';
 
-    public function getHeading(): string
-    {
-        return $this->period() === UserStatisticsService::MONTHLY
-            ? 'Yangi foydalanuvchilar — oylik'
-            : 'Yangi foydalanuvchilar — kunlik';
-    }
+    protected static ?string $maxHeight = '360px';
+
+    protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
     {
@@ -28,7 +25,7 @@ class NewUsersChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Ro\'yxatdan o\'tganlar',
+                    'label' => 'Yangi foydalanuvchilar',
                     'data' => array_values($series),
                     'backgroundColor' => '#0B3C5D',
                     'borderRadius' => 6,

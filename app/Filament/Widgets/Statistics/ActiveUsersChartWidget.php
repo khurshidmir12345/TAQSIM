@@ -2,28 +2,25 @@
 
 namespace App\Filament\Widgets\Statistics;
 
-use App\Filament\Widgets\Statistics\Concerns\ReadsStatisticsFilters;
+use App\Filament\Widgets\Statistics\Concerns\HasPeriodFilter;
 use App\Services\Admin\UserStatisticsService;
 use Filament\Widgets\ChartWidget;
 
 class ActiveUsersChartWidget extends ChartWidget
 {
-    use ReadsStatisticsFilters;
+    use HasPeriodFilter;
 
-    protected static ?int $sort = 2;
+    public ?string $filter = UserStatisticsService::DAILY;
 
-    protected static ?string $maxHeight = '320px';
+    protected static ?string $heading = 'Faol foydalanuvchilar';
 
-    public function getHeading(): string
-    {
-        return $this->period() === UserStatisticsService::MONTHLY
-            ? 'Faol foydalanuvchilar — oylik'
-            : 'Faol foydalanuvchilar — kunlik';
-    }
+    protected static ?string $maxHeight = '360px';
+
+    protected int|string|array $columnSpan = 'full';
 
     public function getDescription(): string
     {
-        return 'Kirim yoki vozvrat yozuvini yaratganlar. Bir katakda bir foydalanuvchi bir marta sanaladi.';
+        return 'Kirim yoki vozvrat yozuvini yaratganlar.';
     }
 
     protected function getData(): array

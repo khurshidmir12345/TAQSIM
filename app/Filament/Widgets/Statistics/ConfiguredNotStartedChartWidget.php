@@ -2,28 +2,25 @@
 
 namespace App\Filament\Widgets\Statistics;
 
-use App\Filament\Widgets\Statistics\Concerns\ReadsStatisticsFilters;
+use App\Filament\Widgets\Statistics\Concerns\HasPeriodFilter;
 use App\Services\Admin\UserStatisticsService;
 use Filament\Widgets\ChartWidget;
 
 class ConfiguredNotStartedChartWidget extends ChartWidget
 {
-    use ReadsStatisticsFilters;
+    use HasPeriodFilter;
 
-    protected static ?int $sort = 2;
+    public ?string $filter = UserStatisticsService::DAILY;
 
-    protected static ?string $maxHeight = '320px';
+    protected static ?string $heading = 'Sozlagan, lekin ishlamaganlar';
 
-    public function getHeading(): string
-    {
-        return $this->period() === UserStatisticsService::MONTHLY
-            ? 'Sozlab, boshlamaganlar — oylik'
-            : 'Sozlab, boshlamaganlar — kunlik';
-    }
+    protected static ?string $maxHeight = '360px';
+
+    protected int|string|array $columnSpan = 'full';
 
     public function getDescription(): string
     {
-        return 'Do\'kon ochilgan sana bo\'yicha. Ustun baland bo\'lsa — o\'sha davrda kelganlar ishga tushmagan.';
+        return 'Mahsulot, xom ashyo yoki retsept kiritgan, ammo birorta kirim, vozvrat, xarajat va zakaz yo\'q. Do\'kon ochilgan sana bo\'yicha.';
     }
 
     protected function getData(): array

@@ -6,7 +6,9 @@ use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Statistics\ActiveUsersStats;
 use App\Filament\Pages\Statistics\ConfiguredNotStartedStats;
 use App\Filament\Pages\Statistics\NewUsersStats;
-use App\Filament\Pages\Statistics\StatisticsPage;
+use App\Filament\Widgets\Statistics\ActiveUsersChartWidget;
+use App\Filament\Widgets\Statistics\ConfiguredNotStartedChartWidget;
+use App\Filament\Widgets\Statistics\NewUsersChartWidget;
 use App\Models\BreadCategory;
 use App\Models\BreadReturn;
 use App\Models\Currency;
@@ -175,7 +177,6 @@ class UserStatisticsTest extends TestCase
         );
 
         $this->assertSame(1, $series[$today->format('Y-m-d')]);
-        $this->assertSame(1, $this->stats->deletedUsers($today->toDateString(), $today->toDateString()));
     }
 
     public function test_users_outside_the_range_are_excluded(): void
@@ -221,7 +222,6 @@ class UserStatisticsTest extends TestCase
         );
 
         $this->assertSame(2, $series[$today->format('Y-m-d')]);
-        $this->assertSame(2, $this->stats->activeUsersTotal($today->toDateString(), $today->toDateString()));
     }
 
     public function test_same_user_counted_once_per_bucket(): void
@@ -242,25 +242,6 @@ class UserStatisticsTest extends TestCase
         $this->assertSame(1, $series[$today->format('Y-m-d')]);
     }
 
-    public function test_unique_total_differs_from_bucket_sum(): void
-    {
-        $today = $this->today();
-        $shop = $this->makeShop();
-        $baker = $this->makeUser();
-
-        $this->makeProduction($shop, $baker, $today->subDay()->setTime(5, 0));
-        $this->makeProduction($shop, $baker, $today->setTime(5, 0));
-
-        $from = $today->subDay()->toDateString();
-        $to = $today->toDateString();
-
-        $series = $this->stats->activeUsers(UserStatisticsService::DAILY, $from, $to);
-
-        // Ikki kun faol — kataklar yig'indisi 2, lekin odam bitta.
-        $this->assertSame(2, array_sum($series));
-        $this->assertSame(1, $this->stats->activeUsersTotal($from, $to));
-    }
-
     public function test_expense_alone_does_not_make_a_user_active(): void
     {
         $today = $this->today();
@@ -275,7 +256,13 @@ class UserStatisticsTest extends TestCase
             'created_by' => $accountant->id,
         ])->forceFill(['created_at' => $today->setTime(12, 0)->utc()])->save();
 
-        $this->assertSame(0, $this->stats->activeUsersTotal($today->toDateString(), $today->toDateString()));
+        $series = $this->stats->activeUsers(
+            UserStatisticsService::DAILY,
+            $today->toDateString(),
+            $today->toDateString(),
+        );
+
+        $this->assertSame(0, array_sum($series));
     }
 
     // ─── Sozlagan, lekin ishlamagan ──────────────────────────────────────
@@ -298,7 +285,7 @@ class UserStatisticsTest extends TestCase
         $shop = $this->makeShop($this->today()->subDays(3));
         $this->configureShop($shop);
 
-        $this->assertSame(1, $this->stats->configuredNotStartedOwners());
+        $this->assertSame(1, $this->stats->configuredNotStartedQuery()->count());
     }
 
     public function test_empty_shop_without_configuration_is_not_listed(): void
@@ -306,7 +293,7 @@ class UserStatisticsTest extends TestCase
         $this->makeShop($this->today()->subDays(3));
 
         // Hech narsa kiritilmagan — bu "sozlagan" emas.
-        $this->assertSame(0, $this->stats->configuredNotStartedOwners());
+        $this->assertSame(0, $this->stats->configuredNotStartedQuery()->count());
     }
 
     /**
@@ -359,7 +346,7 @@ class UserStatisticsTest extends TestCase
             ]),
         };
 
-        $this->assertSame(0, $this->stats->configuredNotStartedOwners());
+        $this->assertSame(0, $this->stats->configuredNotStartedQuery()->count());
     }
 
     public function test_recipe_alone_counts_as_configured(): void
@@ -367,7 +354,7 @@ class UserStatisticsTest extends TestCase
         $shop = $this->makeShop($this->today()->subDay());
         $this->makeRecipe($shop);
 
-        $this->assertSame(1, $this->stats->configuredNotStartedOwners());
+        $this->assertSame(1, $this->stats->configuredNotStartedQuery()->count());
     }
 
     public function test_configured_not_started_series_uses_shop_creation_date(): void
@@ -392,34 +379,6 @@ class UserStatisticsTest extends TestCase
     }
 
     // ─── Davr tanlovi ────────────────────────────────────────────────────
-
-    public function test_range_presets_resolve_to_expected_dates(): void
-    {
-        $today = $this->today();
-
-        $this->assertSame(
-            [$today->toDateString(), $today->toDateString()],
-            StatisticsPage::resolveRange('today'),
-        );
-
-        $this->assertSame(
-            [$today->subDays(6)->toDateString(), $today->toDateString()],
-            StatisticsPage::resolveRange('7d'),
-        );
-
-        $this->assertSame(
-            [$today->startOfMonth()->toDateString(), $today->toDateString()],
-            StatisticsPage::resolveRange('this_month'),
-        );
-
-        $this->assertSame(
-            [
-                $today->subMonth()->startOfMonth()->toDateString(),
-                $today->subMonth()->endOfMonth()->toDateString(),
-            ],
-            StatisticsPage::resolveRange('last_month'),
-        );
-    }
 
     public function test_daily_buckets_are_continuous(): void
     {
@@ -469,6 +428,55 @@ class UserStatisticsTest extends TestCase
         $this->actingAsAdmin();
 
         Livewire::test($page)->assertOk();
+    }
+
+    /**
+     * @return array<string,array{0:class-string}>
+     */
+    public static function chartWidgets(): array
+    {
+        return [
+            'yangi foydalanuvchilar' => [NewUsersChartWidget::class],
+            'faol foydalanuvchilar' => [ActiveUsersChartWidget::class],
+            'sozlagan, ishlamagan' => [ConfiguredNotStartedChartWidget::class],
+        ];
+    }
+
+    /**
+     * Grafik ustida faqat ikkita tanlov bo'lishi kerak — boshqa filtr yo'q.
+     */
+    #[DataProvider('chartWidgets')]
+    public function test_chart_offers_only_daily_and_monthly(string $widget): void
+    {
+        $this->actingAsAdmin();
+
+        Livewire::test($widget)
+            ->assertOk()
+            ->assertSet('filter', UserStatisticsService::DAILY)
+            ->set('filter', UserStatisticsService::MONTHLY)
+            ->assertOk();
+
+        $filters = (new \ReflectionMethod($widget, 'getFilters'))
+            ->invoke(new $widget);
+
+        $this->assertSame(
+            [UserStatisticsService::DAILY, UserStatisticsService::MONTHLY],
+            array_keys($filters),
+        );
+    }
+
+    public function test_daily_chart_covers_last_30_days_and_monthly_12_months(): void
+    {
+        $this->actingAsAdmin();
+
+        $widget = new NewUsersChartWidget;
+
+        $daily = (new \ReflectionMethod($widget, 'from'))->invoke($widget);
+        $this->assertSame($this->today()->subDays(29)->toDateString(), $daily);
+
+        $widget->filter = UserStatisticsService::MONTHLY;
+        $monthly = (new \ReflectionMethod($widget, 'from'))->invoke($widget);
+        $this->assertSame($this->today()->subMonths(11)->startOfMonth()->toDateString(), $monthly);
     }
 
     public function test_dashboard_does_not_show_statistics_widgets(): void

@@ -74,13 +74,14 @@ class NotificationService
     /**
      * Foydalanuvchi shu turdagi push'ni qabul qilishni xohlaydimi.
      *
-     * `notification_prefs` null yoki kalit yo'q bo'lsa — yoqiq deb hisoblanadi
-     * (yangi foydalanuvchi hamma narsani oladi).
+     * Yagona tugma: `notification_prefs['enabled']`. O'chirilgan bo'lsa faqat
+     * eslatuvchi turlar to'xtaydi — xodim qo'shilishi, tizim va admin xabari
+     * baribir yetkaziladi. Kalit yo'q bo'lsa yoqiq deb hisoblanadi.
      */
     public function wantsPush(User $user, NotificationCategory $category): bool
     {
-        // Admin qo'lda yuborgan xabar doim yetkaziladi.
-        if (! $category->isMutable()) {
+        // Majburiy turlar sozlamaga bog'liq emas.
+        if (! $category->isOptional()) {
             return true;
         }
 
@@ -90,12 +91,7 @@ class NotificationService
             return true;
         }
 
-        // Umumiy tugma o'chirilgan bo'lsa — hech narsa yuborilmaydi.
-        if (array_key_exists('enabled', $prefs) && $prefs['enabled'] === false) {
-            return false;
-        }
-
-        return ($prefs[$category->value] ?? true) !== false;
+        return ($prefs['enabled'] ?? true) !== false;
     }
 
     /**

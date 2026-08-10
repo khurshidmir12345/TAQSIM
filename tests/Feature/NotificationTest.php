@@ -154,20 +154,38 @@ class NotificationTest extends TestCase
             ->assertJsonPath('data.preferences.order_reminder', true);
     }
 
-    public function test_preferences_partial_update_keeps_other_keys(): void
+    public function test_disabling_switches_off_optional_categories_only(): void
+    {
+        $this->actingAs($this->user)
+            ->putJson('/api/v1/notifications/preferences', ['enabled' => false])
+            ->assertOk()
+            ->assertJsonPath('data.preferences.enabled', false)
+            // Eslatuvchi turlar umumiy tugmaga ergashadi...
+            ->assertJsonPath('data.preferences.daily_greeting', false)
+            ->assertJsonPath('data.preferences.order_reminder', false)
+            // ...majburiy turlar esa doim yoqiq ko'rinadi.
+            ->assertJsonPath('data.preferences.employee_added', true)
+            ->assertJsonPath('data.preferences.system', true);
+
+        $this->assertFalse($this->user->fresh()->notification_prefs['enabled']);
+    }
+
+    /**
+     * Foydalanuvchi qo'lidagi eski ilova tur bo'yicha kalitlarni hamon
+     * yuboradi — so'rov rad etilmasligi, lekin holatga ta'sir qilmasligi kerak.
+     */
+    public function test_legacy_category_keys_are_accepted_but_ignored(): void
     {
         $this->actingAs($this->user)
             ->putJson('/api/v1/notifications/preferences', ['daily_greeting' => false])
             ->assertOk()
-            ->assertJsonPath('data.preferences.daily_greeting', false)
-            ->assertJsonPath('data.preferences.order_reminder', true);
+            ->assertJsonPath('data.preferences.enabled', true)
+            ->assertJsonPath('data.preferences.daily_greeting', true);
 
-        $this->actingAs($this->user)
-            ->putJson('/api/v1/notifications/preferences', ['order_reminder' => false])
-            ->assertOk()
-            // Birinchi tanlov saqlanib qolishi kerak.
-            ->assertJsonPath('data.preferences.daily_greeting', false)
-            ->assertJsonPath('data.preferences.order_reminder', false);
+        $this->assertArrayNotHasKey(
+            'daily_greeting',
+            $this->user->fresh()->notification_prefs ?? [],
+        );
     }
 
     // ─── Push sozlamasi mantiqi ──────────────────────────────────────────
@@ -216,22 +234,70 @@ class NotificationTest extends TestCase
         );
     }
 
-    public function test_single_category_can_be_disabled(): void
+    /**
+     * Xodim qo'shilishi va tizim xabari hisobga oid muhim ma'lumot —
+     * foydalanuvchi bildirishnomani o'chirsa ham yetkaziladi.
+     *
+     * @return array<int,array{0:NotificationCategory}>
+     */
+    public static function mandatoryCategories(): array
     {
-        $this->user->update(['notification_prefs' => ['daily_greeting' => false]]);
+        return [
+            [NotificationCategory::EmployeeAdded],
+            [NotificationCategory::System],
+            [NotificationCategory::Admin],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('mandatoryCategories')]
+    public function test_mandatory_categories_are_delivered_when_disabled(
+        NotificationCategory $category,
+    ): void {
+        $this->user->update(['notification_prefs' => ['enabled' => false]]);
 
         $this->makeDevice($this->user, 'device-token-2');
 
         $this->mock(FcmService::class, function (MockInterface $mock): void {
             $mock->shouldReceive('isConfigured')->andReturn(true);
-            // Kunlik tilak o'chirilgan — yuborilmaydi.
+            $mock->shouldReceive('send')->once()->andReturn(FcmService::SENT);
+        });
+
+        app(NotificationService::class)->notifyRaw(
+            $this->user->fresh(),
+            $category,
+            'Muhim xabar',
+            'Matn',
+        );
+    }
+
+    /**
+     * @return array<int,array{0:NotificationCategory}>
+     */
+    public static function optionalCategories(): array
+    {
+        return [
+            [NotificationCategory::DailyGreeting],
+            [NotificationCategory::OrderReminder],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('optionalCategories')]
+    public function test_optional_categories_stop_when_disabled(
+        NotificationCategory $category,
+    ): void {
+        $this->user->update(['notification_prefs' => ['enabled' => false]]);
+
+        $this->makeDevice($this->user, 'device-token-3');
+
+        $this->mock(FcmService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('isConfigured')->andReturn(true);
             $mock->shouldNotReceive('send');
         });
 
         app(NotificationService::class)->notifyRaw(
             $this->user->fresh(),
-            NotificationCategory::DailyGreeting,
-            'Xayrli tong',
+            $category,
+            'Eslatma',
             'Matn',
         );
     }

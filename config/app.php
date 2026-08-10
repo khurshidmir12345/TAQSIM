@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Business Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Ma'lumotlar UTC'da saqlanadi, lekin foydalanuvchi uchun "bugun" tushunchasi
+    | va rejalashtirilgan bildirishnomalar vaqti mahalliy vaqtga bog'liq.
+    | Kunlik tilak / zakaz eslatmasi shu mintaqa bo'yicha yuboriladi.
+    |
+    */
+
+    'business_timezone' => env('BUSINESS_TIMEZONE', 'Asia/Tashkent'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

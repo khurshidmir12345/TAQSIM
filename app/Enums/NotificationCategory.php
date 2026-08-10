@@ -3,15 +3,19 @@
 namespace App\Enums;
 
 /**
- * Bildirishnoma turlari. Foydalanuvchi profilda har birini alohida
- * o'chirib qo'yishi mumkin (`users.notification_prefs`).
+ * Bildirishnoma turlari.
+ *
+ * Foydalanuvchi profilda faqat BITTA umumiy tugmani boshqaradi
+ * (`users.notification_prefs['enabled']`). O'chirilganda eslatuvchi
+ * turlar (kunlik tilak, zakaz eslatmasi) to'xtaydi; hisobga oid
+ * muhim xabarlar esa baribir yetkaziladi.
  */
 enum NotificationCategory: string
 {
     /** Har kuni ertalabki tilak. */
     case DailyGreeting = 'daily_greeting';
 
-    /** "Ertaga zakaz bor" / "Bugun zakaz bor" eslatmalari. */
+    /** "Bugun zakaz bor" eslatmalari. */
     case OrderReminder = 'order_reminder';
 
     /** Biznesga yangi xodim qo'shildi. */
@@ -24,21 +28,35 @@ enum NotificationCategory: string
     case Admin = 'admin';
 
     /**
-     * Foydalanuvchi o'chira oladigan turlar.
+     * Umumiy tugma o'chirilganda to'xtaydigan turlar.
      *
-     * `Admin` ro'yxatda yo'q — admin qo'lda yuborgan xabar doim yetkaziladi.
+     * Xodim qo'shilishi, tizim xabarlari va admin xabari ro'yxatda yo'q —
+     * ular majburiy, sozlamadan qat'i nazar yetkaziladi.
      */
-    public function isMutable(): bool
+    public function isOptional(): bool
     {
-        return $this !== self::Admin;
+        return match ($this) {
+            self::DailyGreeting, self::OrderReminder => true,
+            default => false,
+        };
     }
 
-    /** Sozlamalar ekranida ko'rsatiladigan tartib. */
-    public static function preferenceKeys(): array
+    /**
+     * Eski mobil versiyalar yuboradigan/kutadigan kalitlar.
+     *
+     * Yangi ilovada tur bo'yicha alohida tugma yo'q, lekin foydalanuvchilar
+     * qo'lidagi eski versiya bu kalitlarni hamon jo'natadi — API ularni
+     * rad etmasligi kerak.
+     *
+     * @return array<int,string>
+     */
+    public static function legacyPreferenceKeys(): array
     {
-        return array_map(
-            static fn (self $c): string => $c->value,
-            array_filter(self::cases(), static fn (self $c): bool => $c->isMutable()),
-        );
+        return [
+            self::DailyGreeting->value,
+            self::OrderReminder->value,
+            self::EmployeeAdded->value,
+            self::System->value,
+        ];
     }
 }

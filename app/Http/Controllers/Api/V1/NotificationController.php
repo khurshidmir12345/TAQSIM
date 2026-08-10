@@ -98,8 +98,7 @@ class NotificationController extends Controller
 
     /**
      * GET /v1/notifications/preferences
-     * Sozlanmagan kalitlar `true` bo'lib qaytadi — yangi foydalanuvchi
-     * hamma turdagi push'ni oladi.
+     * Sozlanmagan bo'lsa `true` qaytadi — yangi foydalanuvchi push oladi.
      */
     public function preferences(Request $request): JsonResponse
     {
@@ -108,29 +107,27 @@ class NotificationController extends Controller
 
     /**
      * PUT /v1/notifications/preferences
-     * Faqat yuborilgan kalitlar o'zgaradi (qisman yangilash).
+     *
+     * Yagona tugma — `enabled`. Eski mobil versiyalar tur bo'yicha kalitlar
+     * ham yuboradi: ular rad etilmaydi, lekin hech narsaga ta'sir qilmaydi.
      */
     public function updatePreferences(Request $request): JsonResponse
     {
-        $keys = NotificationCategory::preferenceKeys();
-
         $validated = $request->validate([
             'enabled' => ['sometimes', 'boolean'],
-            ...array_reduce($keys, static function (array $rules, string $key): array {
-                $rules[$key] = ['sometimes', 'boolean'];
-
-                return $rules;
-            }, []),
+            ...array_fill_keys(
+                NotificationCategory::legacyPreferenceKeys(),
+                ['sometimes', 'boolean'],
+            ),
         ]);
 
-        $user = $request->user();
-        $prefs = is_array($user->notification_prefs) ? $user->notification_prefs : [];
+        if (array_key_exists('enabled', $validated)) {
+            $user = $request->user();
+            $prefs = is_array($user->notification_prefs) ? $user->notification_prefs : [];
+            $prefs['enabled'] = (bool) $validated['enabled'];
 
-        foreach ($validated as $key => $value) {
-            $prefs[$key] = (bool) $value;
+            $user->update(['notification_prefs' => $prefs]);
         }
-
-        $user->update(['notification_prefs' => $prefs]);
 
         return $this->success(['preferences' => $this->currentPreferences($request)]);
     }
@@ -172,16 +169,26 @@ class NotificationController extends Controller
         return $this->success(null, __('api.success'));
     }
 
-    /** @return array<string,bool> */
+    /**
+     * Eski kalitlar haqiqiy holatni aks ettirib qaytadi: eslatuvchi turlar
+     * umumiy tugmaga ergashadi, majburiy turlar esa doim yoqiq — foydalanuvchi
+     * qo'lidagi eski ilovada tugmalar haqiqatga zid ko'rinmasin.
+     *
+     * @return array<string,bool>
+     */
     private function currentPreferences(Request $request): array
     {
         $prefs = $request->user()->notification_prefs;
         $prefs = is_array($prefs) ? $prefs : [];
 
-        $result = ['enabled' => ($prefs['enabled'] ?? true) !== false];
+        $enabled = ($prefs['enabled'] ?? true) !== false;
 
-        foreach (NotificationCategory::preferenceKeys() as $key) {
-            $result[$key] = ($prefs[$key] ?? true) !== false;
+        $result = ['enabled' => $enabled];
+
+        foreach (NotificationCategory::cases() as $category) {
+            if (in_array($category->value, NotificationCategory::legacyPreferenceKeys(), true)) {
+                $result[$category->value] = $category->isOptional() ? $enabled : true;
+            }
         }
 
         return $result;

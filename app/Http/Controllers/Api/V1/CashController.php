@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateCashEntryRequest;
 use App\Models\Shop;
 use App\Services\CashMirrorService;
 use App\Services\CashService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Lang;
@@ -39,11 +40,21 @@ class CashController extends BaseShopController
                 CashService::PERIOD_MONTH,
             ])],
             'date' => ['sometimes', 'date'],
+            'from' => ['sometimes', 'date'],
+            'to' => ['sometimes', 'date', 'after_or_equal:from'],
             'page' => ['sometimes', 'integer', 'min:1'],
         ]);
 
         $period = $validated['period'] ?? CashService::PERIOD_DAY;
-        ['from' => $from, 'to' => $to] = $this->cash->resolvePeriod($period, $validated['date'] ?? null);
+
+        // Ilovadagi davr tanlagichi aniq oraliq beradi (masalan o'tgan hafta) —
+        // berilgan bo'lsa u ustun turadi.
+        if (isset($validated['from'], $validated['to'])) {
+            $from = Carbon::parse($validated['from'])->toDateString();
+            $to = Carbon::parse($validated['to'])->toDateString();
+        } else {
+            ['from' => $from, 'to' => $to] = $this->cash->resolvePeriod($period, $validated['date'] ?? null);
+        }
 
         $entries = $this->cash->entries($shop, $from, $to);
 

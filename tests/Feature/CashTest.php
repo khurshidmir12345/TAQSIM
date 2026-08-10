@@ -282,6 +282,21 @@ class CashTest extends TestCase
             ->assertJsonCount(0, 'data.entries');
     }
 
+    /** Ilovadagi davr tanlagichi aniq oraliq yuboradi — u ustun turishi kerak. */
+    public function test_explicit_range_overrides_period(): void
+    {
+        $tz = config('app.business_timezone');
+        $past = now($tz)->subDays(10)->toDateString();
+
+        $this->makeProduction(bread: 20, cost: 10000, date: $past);
+
+        $this->actingAs($this->owner)
+            ->getJson("/api/v1/shops/{$this->shop->id}/cash?period=day&from={$past}&to={$past}")
+            ->assertOk()
+            ->assertJsonPath('data.summary.income.total', 100000)
+            ->assertJsonPath('data.summary.period.from', $past);
+    }
+
     // ─── Qo'lda yozuvlar ────────────────────────────────────────────────
 
     public function test_manual_income_is_created_and_listed(): void
@@ -389,6 +404,28 @@ class CashTest extends TestCase
         $this->actingAs($stranger)
             ->getJson("/api/v1/shops/{$this->shop->id}/cash")
             ->assertStatus(403);
+    }
+
+    /**
+     * Kassa qo'shilgunga qadar yaratilgan yozuvlar ham daftarga tushishi kerak —
+     * aks holda sozlama yoqiq turgani holda eski kunlar bo'sh ko'rinardi.
+     */
+    public function test_backfill_command_mirrors_existing_records(): void
+    {
+        // Observerlarsiz yaratamiz — kassa qo'shilishidan oldingi holat.
+        Production::withoutEvents(fn () => $this->makeProduction(bread: 100, cost: 200000));
+        BreadReturn::withoutEvents(fn () => $this->makeReturn(total: 50000));
+
+        $this->assertSame(0, CashTransaction::count());
+
+        $this->artisan('cash:backfill')->assertSuccessful();
+
+        $this->assertSame(3, CashTransaction::count());
+        $this->assertDatabaseHas('cash_transactions', [
+            'type' => 'income',
+            'source' => 'production',
+            'amount' => 500000.00,
+        ]);
     }
 
     // ─── Asosiy sahifa ──────────────────────────────────────────────────

@@ -40,6 +40,7 @@ return [
         'send_code_new' => 'Ырастоо коду жөнөтүлдү.',
         'register_phone_taken' => 'Бул телефон мурун катталган. Системага кириңиз.',
         'invalid_code' => 'Код туура эмес же мөөнөтү өттү.',
+        'password_reset_success' => 'Сырсөз жаңыртылды.',
         'register_success' => 'Катталуу аяктады.',
         'login_invalid' => 'Телефон же сырсөз туура эмес.',
         'login_success' => 'Системага кирдиңиз.',

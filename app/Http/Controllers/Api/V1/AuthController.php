@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\SendCodeRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
@@ -122,6 +123,40 @@ class AuthController extends Controller
             'user' => new UserResource($user),
             'token' => $newToken->plainTextToken,
         ], __('api.auth.login_success'));
+    }
+
+    /**
+     * POST /v1/auth/reset-password
+     *
+     * Parolni unutgan foydalanuvchi: telefonga kelgan kod tasdiqlanadi va
+     * yangi parol o'rnatiladi. Muvaffaqiyatda darhol tizimga kiritiladi —
+     * foydalanuvchini yana login ekraniga qaytarish ortiqcha qadam.
+     */
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $user = User::where('phone', $request->phone)->first();
+
+        // Raqam ro'yxatdan o'tmaganini oshkor qilmaymiz — kod baribir
+        // tasdiqlanadi, javob esa bir xil xato bo'ladi.
+        if (! $user || ! $this->otpService->validate($request->phone, $request->code)) {
+            throw ValidationException::withMessages([
+                'code' => [__('api.auth.invalid_code')],
+            ]);
+        }
+
+        if ($user->isBlocked()) {
+            return $this->error(__('api.errors.account_blocked'), 403, ['code' => 'account_blocked']);
+        }
+
+        $user->update(['password' => $request->password]);
+
+        $newToken = $user->createToken('mobile');
+        $this->devices->record($user, $newToken, $request);
+
+        return $this->success([
+            'user' => new UserResource($user),
+            'token' => $newToken->plainTextToken,
+        ], __('api.auth.password_reset_success'));
     }
 
     /**

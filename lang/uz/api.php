@@ -40,6 +40,7 @@ return [
         'send_code_new' => 'Tasdiqlash kodi yuborildi.',
         'register_phone_taken' => 'Bu telefon raqami allaqachon ro‘yxatdan o‘tgan. Iltimos, tizimga kiring.',
         'invalid_code' => 'Tasdiqlash kodi noto‘g‘ri yoki muddati o‘tgan.',
+        'password_reset_success' => 'Parol yangilandi.',
         'register_success' => 'Ro‘yxatdan o‘tildi.',
         'login_invalid' => 'Telefon raqam yoki parol noto‘g‘ri.',
         'login_success' => 'Tizimga kirdingiz.',

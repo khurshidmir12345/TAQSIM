@@ -40,6 +40,7 @@ return [
         'send_code_new' => 'Рамзи тасдиқ фиристода шуд.',
         'register_phone_taken' => 'Ин телефон аллакай сабт шудааст. Ворид шавед.',
         'invalid_code' => 'Рамз нодуруст аст ё мӯҳлаташ гузашт.',
+        'password_reset_success' => 'Рамз навсозӣ шуд.',
         'register_success' => 'Сабтнома анҷом ёфт.',
         'login_invalid' => 'Телефон ё парол нодуруст аст.',
         'login_success' => 'Шумо ворид шудед.',

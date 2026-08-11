@@ -40,6 +40,7 @@ return [
         'send_code_new' => 'Doğrulama kodu gönderildi.',
         'register_phone_taken' => 'Bu telefon zaten kayıtlı. Lütfen giriş yapın.',
         'invalid_code' => 'Kod hatalı veya süresi dolmuş.',
+        'password_reset_success' => 'Şifre güncellendi.',
         'register_success' => 'Kayıt tamamlandı.',
         'login_invalid' => 'Telefon veya şifre hatalı.',
         'login_success' => 'Giriş yaptınız.',

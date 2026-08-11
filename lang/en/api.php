@@ -43,6 +43,7 @@ return [
         'send_code_new' => 'Verification code sent.',
         'register_phone_taken' => 'This phone number is already registered. Please sign in.',
         'invalid_code' => 'Verification code is invalid or expired.',
+        'password_reset_success' => 'Password updated.',
         'register_success' => 'Registration completed.',
         'login_invalid' => 'Invalid phone number or password.',
         'login_success' => 'Signed in successfully.',

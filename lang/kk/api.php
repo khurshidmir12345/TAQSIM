@@ -40,6 +40,7 @@ return [
         'send_code_new' => 'Растау коды жіберілді.',
         'register_phone_taken' => 'Бұл телефон тіркелген. Жүйеге кіріңіз.',
         'invalid_code' => 'Код қате немесе мерзімі өткен.',
+        'password_reset_success' => 'Құпия сөз жаңартылды.',
         'register_success' => 'Тіркелу аяқталды.',
         'login_invalid' => 'Телефон немесе құпия сөз қате.',
         'login_success' => 'Жүйеге кірдіңіз.',

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\CashTransactionType;
 use App\Http\Requests\StoreCashEntryRequest;
 use App\Http\Requests\UpdateCashEntryRequest;
+use App\Models\ExpenseCategory;
 use App\Models\Shop;
 use App\Services\CashMirrorService;
 use App\Services\CashService;
@@ -62,7 +63,7 @@ class CashController extends BaseShopController
             'period' => $period,
             'summary' => $this->cash->summary($shop, $from, $to),
             'settings' => $this->cash->settings($shop),
-            'entries' => array_map($this->presentEntry(...), $entries->items()),
+            'entries' => $this->presentEntries($shop, $entries->items()),
             'meta' => [
                 'current_page' => $entries->currentPage(),
                 'last_page' => $entries->lastPage(),
@@ -81,7 +82,9 @@ class CashController extends BaseShopController
 
         $entry = $this->cash->create($shop, $type, $data, $request->user()->id);
 
-        return $this->created(['entry' => $this->presentEntry($entry)]);
+        return $this->created([
+            'entry' => $this->presentEntries($shop, [$entry])[0],
+        ]);
     }
 
     /** PUT /v1/shops/{shop}/cash/{entry} */
@@ -103,8 +106,10 @@ class CashController extends BaseShopController
             return $this->error(__('api.cash.auto_entry_readonly'), 422);
         }
 
+        $updated = $this->cash->update($model, $request->validated());
+
         return $this->success([
-            'entry' => $this->presentEntry($this->cash->update($model, $request->validated())),
+            'entry' => $this->presentEntries($shop, [$updated])[0],
         ]);
     }
 
@@ -176,12 +181,34 @@ class CashController extends BaseShopController
     }
 
     /**
-     * Yozuvni ilova kutgan shaklga keltiradi.
+     * Yozuvlarni ilova kutgan shaklga keltiradi.
      *
+     * Foydalanuvchi qo'shgan kategoriyalar nomi bitta so'rovda oldindan
+     * yuklanadi — aks holda ro'yxatda nom o'rniga UUID ko'rinardi.
+     *
+     * @param  array<int,object>  $entries
+     * @return array<int,array<string,mixed>>
+     */
+    private function presentEntries(Shop $shop, array $entries): array
+    {
+        $customNames = ExpenseCategory::query()
+            ->where('shop_id', $shop->id)
+            ->pluck('name', 'id')
+            ->all();
+
+        return array_map(
+            fn (object $entry): array => $this->presentEntry($entry, $customNames),
+            $entries,
+        );
+    }
+
+    /**
      * `is_editable` — avtomatik yozuvda `false`, ilova unga tahrir tugmasini
      * ko'rsatmasligi kerak.
+     *
+     * @param  array<string,string>  $customNames
      */
-    private function presentEntry(object $entry): array
+    private function presentEntry(object $entry, array $customNames = []): array
     {
         $source = (string) $entry->source;
         $category = $entry->category ?: 'boshqa';
@@ -191,7 +218,7 @@ class CashController extends BaseShopController
             'type' => (string) $entry->type,
             'source' => $source,
             'category' => $category,
-            'category_name' => $this->categoryName($source, $category),
+            'category_name' => $this->categoryName($source, $category, $customNames),
             'amount' => (float) $entry->amount,
             'description' => $entry->description,
             'date' => $entry->date instanceof \DateTimeInterface
@@ -206,15 +233,21 @@ class CashController extends BaseShopController
 
     /**
      * Kategoriya nomi. Avtomatik yozuvlar va kirim turlari `cash.php` dan,
-     * xarajat turlari mavjud `expense.php` dan olinadi; topilmasa — kalitning
-     * o'zi (foydalanuvchi qo'shgan kategoriya nomi).
+     * xarajat turlari `expense.php` dan olinadi. Foydalanuvchi qo'shgan
+     * kategoriya UUID bilan saqlanadi — uning nomi jadvaldan keladi.
+     *
+     * @param  array<string,string>  $customNames
      */
-    private function categoryName(string $source, string $category): string
+    private function categoryName(string $source, string $category, array $customNames = []): string
     {
         $locale = app()->getLocale();
 
         if ($source !== 'manual') {
             return Lang::get("cash.auto_categories.{$category}", [], $locale);
+        }
+
+        if (isset($customNames[$category])) {
+            return $customNames[$category];
         }
 
         foreach (["cash.income_categories.{$category}", "expense.categories.{$category}"] as $key) {

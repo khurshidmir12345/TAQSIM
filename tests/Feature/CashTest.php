@@ -397,6 +397,35 @@ class CashTest extends TestCase
         $this->assertNotContains('cash.auto_categories.production_income', $names);
     }
 
+    /** Foydalanuvchi qo'shgan kategoriya ro'yxatda nomi bilan ko'rinishi kerak. */
+    public function test_custom_category_shows_its_name_not_the_id(): void
+    {
+        $categoryId = $this->actingAs($this->owner)
+            ->postJson("/api/v1/shops/{$this->shop->id}/expense-categories?type=income", [
+                'name' => 'Ijaraga berish',
+            ])->json('data.category.id');
+
+        $this->actingAs($this->owner)
+            ->postJson("/api/v1/shops/{$this->shop->id}/cash", [
+                'type' => 'income',
+                'category' => $categoryId,
+                'amount' => 120000,
+                'date' => $this->today(),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.entry.category_name', 'Ijaraga berish');
+
+        $entries = $this->actingAs($this->owner)
+            ->getJson("/api/v1/shops/{$this->shop->id}/cash?period=day")
+            ->assertOk()
+            ->json('data.entries');
+
+        $names = array_column($entries, 'category_name');
+
+        $this->assertContains('Ijaraga berish', $names);
+        $this->assertNotContains($categoryId, $names);
+    }
+
     public function test_other_shop_member_cannot_read_cash(): void
     {
         $stranger = User::factory()->create();

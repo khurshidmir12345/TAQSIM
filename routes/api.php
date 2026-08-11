@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\V1\AppleAuthController;
+use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BreadCategoryController;
 use App\Http\Controllers\Api\V1\CashController;
@@ -56,6 +57,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/measurement-units/batch', [MeasurementUnitController::class, 'batch']);
     Route::get('/currencies', [CurrencyController::class, 'index']);
     Route::get('/system-links', [SystemLinkController::class, 'index']);
+
+    // ── Ilova versiyasi (public — tekshiruv login'gacha ham bo'ladi) ──
+    Route::get('/app-version', [AppVersionController::class, 'show']);
 
     // ── Auth (public) ──────────────────────────────────────────────
     Route::middleware('throttle:auth')->group(function () {

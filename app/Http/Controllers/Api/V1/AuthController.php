@@ -6,10 +6,12 @@ use App\Exceptions\InvalidRegistrationCodeException;
 use App\Exceptions\PhoneAlreadyRegisteredException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ChangePhoneRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\SendCodeRequest;
+use App\Http\Requests\SendPhoneChangeCodeRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -242,6 +244,70 @@ class AuthController extends Controller
         return $this->success([
             'token' => $newToken->plainTextToken,
         ], __('api.auth.password_changed'));
+    }
+
+    /**
+     * POST /v1/auth/phone/send-code
+     *
+     * Telefon raqamni almashtirish — 1-qadam. Yangi raqamga kod yuboriladi.
+     * Raqam bandligi SMS'dan oldin tekshiriladi (SendPhoneChangeCodeRequest).
+     */
+    public function sendPhoneChangeCode(SendPhoneChangeCodeRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $phone = $request->phone;
+
+        // Ayni raqamning o'zini "almashtirish" — kod yuborishdan ma'no yo'q.
+        if ($phone === $user->phone) {
+            throw ValidationException::withMessages([
+                'phone' => [__('api.auth.phone_change_same')],
+            ]);
+        }
+
+        $record = $this->otpService->generate($phone);
+        $this->smsService->sendOtp($phone, $record->code);
+        $this->registrationNotifier->notifyOtpRequested($phone, $record->code, false);
+
+        return $this->success([
+            'expires_in' => 120,
+        ], __('api.auth.phone_change_code_sent'));
+    }
+
+    /**
+     * POST /v1/auth/phone
+     *
+     * Telefon raqamni almashtirish — 2-qadam. Kod to'g'ri bo'lsagina raqam
+     * almashadi va tasdiqlangan deb belgilanadi. Kod noto'g'ri bo'lsa eski
+     * raqam tasdiqlangan holida qolaveradi.
+     *
+     * Sessiyalar bekor qilinmaydi: foydalanuvchi o'z hisobida qoladi, faqat
+     * raqami yangilanadi.
+     */
+    public function changePhone(ChangePhoneRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $phone = $request->phone;
+
+        if ($phone === $user->phone) {
+            throw ValidationException::withMessages([
+                'phone' => [__('api.auth.phone_change_same')],
+            ]);
+        }
+
+        if (! $this->otpService->validate($phone, $request->code)) {
+            throw ValidationException::withMessages([
+                'code' => [__('api.auth.invalid_code')],
+            ]);
+        }
+
+        $user->update([
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+        ]);
+
+        return $this->success([
+            'user' => new UserResource($user->fresh()),
+        ], __('api.auth.phone_changed'));
     }
 
     /**

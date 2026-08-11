@@ -74,6 +74,14 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/avatar', [AuthController::class, 'uploadAvatar']);
         Route::delete('/auth/avatar', [AuthController::class, 'deleteAvatar']);
         Route::put('/auth/password', [AuthController::class, 'changePassword']);
+
+        // ── Telefon raqamni almashtirish (SMS tasdiqlash bilan) ─────
+        // Kod tasdiqlanmaguncha eski raqam o'zgarmaydi.
+        Route::post('/auth/phone/send-code', [AuthController::class, 'sendPhoneChangeCode'])
+            ->middleware('throttle:auth');
+        Route::post('/auth/phone', [AuthController::class, 'changePhone'])
+            ->middleware('throttle:auth');
+
         Route::delete('/auth/account', [AuthController::class, 'deleteAccount']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 

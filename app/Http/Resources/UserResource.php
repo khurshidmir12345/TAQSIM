@@ -24,6 +24,10 @@ class UserResource extends JsonResource
             'is_accepted_policy' => $this->is_accepted_policy,
             'avatar_url' => $this->resolveAvatarUrl(),
             'locale' => $this->locale,
+            // Ilova parol o'rnatish ekranida "eski parol" maydonini
+            // ko'rsatish-ko'rsatmaslikni shu bo'yicha hal qiladi. Google yoki
+            // Telegram orqali kirganlarda parol umuman bo'lmaydi.
+            'has_password' => $this->password !== null,
             'email_verified_at' => $this->email_verified_at,
             'phone_verified_at' => $this->phone_verified_at,
             'created_at' => $this->created_at,

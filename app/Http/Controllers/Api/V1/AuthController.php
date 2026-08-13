@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ChangePhoneRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\LoginWithCodeRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\SendCodeRequest;
@@ -18,6 +19,7 @@ use App\Models\User;
 use App\Services\AuthService;
 use App\Services\DeviceService;
 use App\Services\OtpService;
+use App\Services\PasswordGrantService;
 use App\Services\RegistrationNotifier;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
@@ -120,6 +122,44 @@ class AuthController extends Controller
         // Multi-device: eski sessiyalar o'chirilmaydi — har qurilma o'z tokeni bilan.
         $newToken = $user->createToken('mobile');
         $this->devices->record($user, $newToken, $request);
+
+        return $this->success([
+            'user' => new UserResource($user),
+            'token' => $newToken->plainTextToken,
+        ], __('api.auth.login_success'));
+    }
+
+
+    /**
+     * POST /v1/auth/login-with-code
+     *
+     * Parolni unutgan foydalanuvchi: telefonga kelgan kod tasdiqlanadi va
+     * darhol tizimga kiritiladi — parol so'ralmaydi.
+     *
+     * Ilgari parol shu yerda o'rnatilardi, lekin foydalanuvchi ikki marta
+     * parol yozguncha kod muddati (2 daqiqa) o'tib ketardi. Endi parol ilova
+     * ichida, shoshilmasdan qo'yiladi.
+     */
+    public function loginWithCode(LoginWithCodeRequest $request): JsonResponse
+    {
+        $user = User::where('phone', $request->phone)->first();
+
+        // Raqam ro'yxatdan o'tmaganini oshkor qilmaymiz — javob bir xil.
+        if (! $user || ! $this->otpService->validate($request->phone, $request->code)) {
+            throw ValidationException::withMessages([
+                'code' => [__('api.auth.invalid_code')],
+            ]);
+        }
+
+        if ($user->isBlocked()) {
+            return $this->error(__('api.errors.account_blocked'), 403, ['code' => 'account_blocked']);
+        }
+
+        $newToken = $user->createToken('mobile');
+        $this->devices->record($user, $newToken, $request);
+
+        // Endi eski parolni bilmasdan yangisini qo'ya oladi.
+        app(PasswordGrantService::class)->grant($user);
 
         return $this->success([
             'user' => new UserResource($user),
@@ -233,6 +273,9 @@ class AuthController extends Controller
     {
         $user = $request->user();
         $user->update(['password' => $request->password]);
+
+        // Huquq bir martalik — parol qo'yilgach eski parol yana majburiy bo'ladi.
+        app(PasswordGrantService::class)->forget($user);
 
         // Xavfsizlik: parol o'zgarsa barcha sessiyalar bekor qilinadi
         // (user_devices yozuvlari ham cascade orqali o'chadi), so'ng joriy

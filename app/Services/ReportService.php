@@ -250,16 +250,24 @@ class ReportService
             ->whereBetween('date', [$fromDt, $toDt])
             ->get();
 
-        $dayKey = static fn ($model): string => Carbon::parse($model->date)->toDateString();
+        // Uzun oraliqda kunlik nuqtalar minglab bo'lib ketadi va grafik
+        // o'qib bo'lmaydi — shuning uchun oylarga guruhlanadi.
+        $monthly = $fromDt->diffInDays($toDt) > 62;
 
-        $prodByDay = $productions->groupBy($dayKey);
-        $retByDay = $returns->groupBy($dayKey);
-        $expByDay = $expenses->groupBy($dayKey);
+        $bucket = static fn ($model): string => $monthly
+            ? Carbon::parse($model->date)->startOfMonth()->toDateString()
+            : Carbon::parse($model->date)->toDateString();
+
+        $prodByDay = $productions->groupBy($bucket);
+        $retByDay = $returns->groupBy($bucket);
+        $expByDay = $expenses->groupBy($bucket);
 
         // Har bir kun uchun yozuv — ma'lumot bo'lmagan kunlar ham nol bilan
         // qatnashadi, aks holda grafikda uzilish paydo bo'lardi.
         $series = [];
-        $cursor = $fromDt->copy()->startOfDay();
+        $cursor = $monthly
+            ? $fromDt->copy()->startOfMonth()
+            : $fromDt->copy()->startOfDay();
         $last = $toDt->copy()->startOfDay();
 
         while ($cursor->lte($last)) {
@@ -282,7 +290,7 @@ class ReportService
                 'profit' => round($income - $expense, 2),
             ];
 
-            $cursor->addDay();
+            $monthly ? $cursor->addMonth() : $cursor->addDay();
         }
 
         $totalGross = (float) $productions->sum(
@@ -297,6 +305,8 @@ class ReportService
 
         return [
             'period' => ['from' => $fromDt->toDateString(), 'to' => $toDt->toDateString()],
+            // Ilova o'q yorliqlarini shu bo'yicha formatlaydi (kun yoki oy).
+            'granularity' => $monthly ? 'month' : 'day',
             'series' => $series,
             'totals' => [
                 'income' => round($totalIncome, 2),

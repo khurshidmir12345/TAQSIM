@@ -62,13 +62,11 @@ class ReportStatisticsTest extends TestCase
     /** `productions.recipe_id` majburiy FK — har bir tur uchun retsept kerak. */
     private function recipeFor(BreadCategory $c): Recipe
     {
-        return Recipe::create([
-            'shop_id' => $this->shop->id,
-            'bread_category_id' => $c->id,
-            'name' => $c->name,
-            'flour_amount_kg' => 1,
-            'output_quantity' => 1,
-        ]);
+        // Bir tur uchun bitta retsept — takroriy yaratilsa unikal cheklov buziladi.
+        return Recipe::firstOrCreate(
+            ['shop_id' => $this->shop->id, 'bread_category_id' => $c->id],
+            ['name' => $c->name, 'flour_amount_kg' => 1, 'output_quantity' => 1],
+        );
     }
 
     private function produce(BreadCategory $c, int $qty, float $ingredientCost, ?string $date = null): void
@@ -207,6 +205,44 @@ class ReportStatisticsTest extends TestCase
 
         $this->assertSame(0.0, $row['overhead_unit_cost']);
         $this->assertSame(2000.0, $row['true_unit_cost']);
+    }
+
+    public function test_long_range_is_grouped_by_month(): void
+    {
+        // "Barchasi" tanlanganda kunlik nuqtalar minglab bo'lib ketardi —
+        // uzun oraliq oylarga guruhlanadi.
+        $somsa = $this->makeCategory('Somsa', 1000);
+        $this->produce($somsa, 10, 5000, now()->subMonths(3)->toDateString());
+        $this->produce($somsa, 20, 9000, now()->subMonths(1)->toDateString());
+
+        $stats = $this->service->statistics(
+            $this->shop,
+            now()->subMonths(4)->toDateString(),
+            $this->today,
+        );
+
+        $this->assertSame('month', $stats['granularity']);
+        // 4 oy oldindan bugungacha — 5 ta oy nuqtasi.
+        $this->assertCount(5, $stats['series']);
+
+        foreach ($stats['series'] as $point) {
+            $this->assertSame('01', substr($point['date'], -2), 'oy boshiga tushishi kerak');
+        }
+    }
+
+    public function test_short_range_stays_daily(): void
+    {
+        $somsa = $this->makeCategory('Somsa', 1000);
+        $this->produce($somsa, 10, 5000);
+
+        $stats = $this->service->statistics(
+            $this->shop,
+            now()->subDays(6)->toDateString(),
+            $this->today,
+        );
+
+        $this->assertSame('day', $stats['granularity']);
+        $this->assertCount(7, $stats['series']);
     }
 
     public function test_products_are_sorted_by_quantity(): void

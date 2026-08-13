@@ -40,6 +40,29 @@ class ReportController extends BaseShopController
         return $this->success(['report' => $report]);
     }
 
+    /**
+     * Statistika sahifasi uchun: kunlik grafik, umumiy summalar va
+     * mahsulotning asl tannarxi — bitta so'rovda.
+     *
+     * Oraliq berilmasa oxirgi 30 kun olinadi.
+     */
+    public function statistics(Request $request, Shop $shop): JsonResponse
+    {
+        $this->authorizeShop($request, $shop);
+
+        $data = $request->validate([
+            'from' => ['sometimes', 'date'],
+            'to' => ['sometimes', 'date', 'after_or_equal:from'],
+        ]);
+
+        $to = $data['to'] ?? now()->toDateString();
+        $from = $data['from'] ?? now()->subDays(29)->toDateString();
+
+        return $this->success([
+            'statistics' => $this->reportService->statistics($shop, $from, $to),
+        ]);
+    }
+
     public function summary(Request $request, Shop $shop): JsonResponse
     {
         $this->authorizeShop($request, $shop);

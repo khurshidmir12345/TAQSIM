@@ -220,4 +220,149 @@ class ReportService
 
         return $out;
     }
+
+    /**
+     * Statistika sahifasi uchun yagona javob: kunlik grafik, umumiy summalar
+     * va mahsulotning ASL tannarxi.
+     *
+     * Bu yerdagi `profit` bosh sahifadagidan FARQ QILADI: bu yerda tashqi
+     * xarajatlar ham ayriladi (`daromad − barcha xarajat`), chunki grafikda
+     * uch ko'rsatkich yonma-yon turadi va foyda + xarajat = daromad bo'lishi
+     * kerak. Bosh sahifadagi foyda esa faqat xom ashyodan keyingi yalpi foyda.
+     *
+     * @return array{series: array<int,array<string,mixed>>, totals: array<string,float>, products: array<int,array<string,mixed>>}
+     */
+    public function statistics(Shop $shop, string $from, string $to): array
+    {
+        $fromDt = Carbon::parse($from)->startOfDay();
+        $toDt = Carbon::parse($to)->endOfDay();
+
+        $productions = $shop->productions()
+            ->with('breadCategory')
+            ->whereBetween('date', [$fromDt, $toDt])
+            ->get();
+
+        $returns = $shop->breadReturns()
+            ->whereBetween('date', [$fromDt, $toDt])
+            ->get();
+
+        $expenses = $shop->expenses()
+            ->whereBetween('date', [$fromDt, $toDt])
+            ->get();
+
+        $dayKey = static fn ($model): string => Carbon::parse($model->date)->toDateString();
+
+        $prodByDay = $productions->groupBy($dayKey);
+        $retByDay = $returns->groupBy($dayKey);
+        $expByDay = $expenses->groupBy($dayKey);
+
+        // Har bir kun uchun yozuv — ma'lumot bo'lmagan kunlar ham nol bilan
+        // qatnashadi, aks holda grafikda uzilish paydo bo'lardi.
+        $series = [];
+        $cursor = $fromDt->copy()->startOfDay();
+        $last = $toDt->copy()->startOfDay();
+
+        while ($cursor->lte($last)) {
+            $key = $cursor->toDateString();
+
+            $gross = (float) ($prodByDay[$key] ?? collect())->sum(
+                fn ($p) => $p->bread_produced * (float) ($p->breadCategory->selling_price ?? 0)
+            );
+            $returned = (float) ($retByDay[$key] ?? collect())->sum('total_amount');
+            $ingredient = (float) ($prodByDay[$key] ?? collect())->sum('ingredient_cost');
+            $external = (float) ($expByDay[$key] ?? collect())->sum('amount');
+
+            $income = $gross - $returned;
+            $expense = $ingredient + $external;
+
+            $series[] = [
+                'date' => $key,
+                'income' => round($income, 2),
+                'expense' => round($expense, 2),
+                'profit' => round($income - $expense, 2),
+            ];
+
+            $cursor->addDay();
+        }
+
+        $totalGross = (float) $productions->sum(
+            fn ($p) => $p->bread_produced * (float) ($p->breadCategory->selling_price ?? 0)
+        );
+        $totalReturns = (float) $returns->sum('total_amount');
+        $totalIngredient = (float) $productions->sum('ingredient_cost');
+        $totalExternal = (float) $expenses->sum('amount');
+
+        $totalIncome = $totalGross - $totalReturns;
+        $totalExpense = $totalIngredient + $totalExternal;
+
+        return [
+            'period' => ['from' => $fromDt->toDateString(), 'to' => $toDt->toDateString()],
+            'series' => $series,
+            'totals' => [
+                'income' => round($totalIncome, 2),
+                'expense' => round($totalExpense, 2),
+                'profit' => round($totalIncome - $totalExpense, 2),
+                'ingredient_cost' => round($totalIngredient, 2),
+                'external_expenses' => round($totalExternal, 2),
+                'returns' => round($totalReturns, 2),
+            ],
+            'products' => $this->trueUnitCosts($productions, $totalExternal, $totalGross),
+        ];
+    }
+
+    /**
+     * Mahsulotning ASL tannarxi: xom ashyo + unga to'g'ri keladigan tashqi xarajat.
+     *
+     * Tashqi xarajatlar (ijara, yoqilg'i, ish haqi) DAROMAD ULUSHI bo'yicha
+     * taqsimlanadi — ko'proq pul keltirgan mahsulot ko'proq yuk ko'taradi.
+     * Miqdor bo'yicha teng bo'lish arzon va qimmat mahsulotni bir xil yuklab,
+     * qimmat mahsulotning tannarxini sun'iy pasaytirardi.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private function trueUnitCosts($productions, float $totalExternal, float $totalGross): array
+    {
+        $rows = [];
+
+        foreach ($productions->groupBy('bread_category_id') as $items) {
+            $category = $items->first()->breadCategory;
+
+            if (! $category) {
+                continue;
+            }
+
+            $quantity = (int) $items->sum('bread_produced');
+
+            if ($quantity <= 0) {
+                continue;
+            }
+
+            $sellingPrice = (float) $category->selling_price;
+            $ingredientTotal = (float) $items->sum('ingredient_cost');
+            $revenue = $quantity * $sellingPrice;
+
+            // Daromad bo'lmasa (narx 0) taqsimlashning asosi yo'q — 0 beriladi.
+            $share = $totalGross > 0 ? $revenue / $totalGross : 0.0;
+            $overheadTotal = $totalExternal * $share;
+
+            $rows[] = [
+                'bread_category_id' => $category->id,
+                'name' => $category->name,
+                'quantity' => $quantity,
+                'selling_price' => round($sellingPrice, 2),
+                // Faqat xom ashyodan kelib chiqqan tannarx (hisoblash sahifasidagi).
+                'ingredient_unit_cost' => round($ingredientTotal / $quantity, 2),
+                // Shu mahsulotga to'g'ri kelgan tashqi xarajat, 1 donaga.
+                'overhead_unit_cost' => round($overheadTotal / $quantity, 2),
+                // Asl tannarx — ikkalasining yig'indisi.
+                'true_unit_cost' => round(($ingredientTotal + $overheadTotal) / $quantity, 2),
+                'overhead_share' => round($share * 100, 1),
+            ];
+        }
+
+        // Eng ko'p ishlab chiqarilgani tepada.
+        usort($rows, static fn (array $a, array $b): int => $b['quantity'] <=> $a['quantity']);
+
+        return $rows;
+    }
 }

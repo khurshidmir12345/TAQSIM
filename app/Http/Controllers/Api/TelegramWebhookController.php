@@ -12,6 +12,7 @@ use App\Services\TelegramBotService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TelegramWebhookController extends Controller
 {
@@ -98,7 +99,7 @@ class TelegramWebhookController extends Controller
     private function handleStart(SystemBot $bot, int $chatId, string $text, array $message): void
     {
         $parts = explode(' ', $text, 2);
-        $sessionToken = $parts[1] ?? null;
+        $sessionToken = trim($parts[1] ?? '') ?: null;
 
         if ($sessionToken) {
             $session = TelegramAuthSession::where('session_token', $sessionToken)
@@ -115,6 +116,28 @@ class TelegramWebhookController extends Controller
 
             if ($session) {
                 $session->update(['telegram_chat_id' => $chatId]);
+            }
+
+            // Havola bilan kelgan, lekin sessiya topilmadi: muddati tugagan,
+            // allaqachon ishlatilgan yoki boshqa muhitga (dev/prod) tegishli.
+            //
+            // Ilgari bu holatda telefon raqam so'ralardi — foydalanuvchi nima
+            // bo'lganini tushunmasdi va ilova javob kutib qotib qolardi.
+            if (! $session) {
+                Log::info('Telegram: yaroqsiz start tokeni', [
+                    'bot' => $bot->id,
+                    'chat_id' => $chatId,
+                ]);
+
+                $this->telegram->sendMessage(
+                    $bot->token,
+                    $chatId,
+                    "\u{23F3} <b>Havola eskirgan</b>\n\n"
+                    ."Ulanish havolasining muddati tugagan yoki u allaqachon ishlatilgan.\n\n"
+                    ."Ilovaga qaytib, <b>Telegramni ulash</b> tugmasini qaytadan bosing.",
+                );
+
+                return;
             }
         }
 

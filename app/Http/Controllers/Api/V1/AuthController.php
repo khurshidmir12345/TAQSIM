@@ -19,7 +19,6 @@ use App\Models\User;
 use App\Services\AuthService;
 use App\Services\DeviceService;
 use App\Services\OtpService;
-use App\Services\PasswordGrantService;
 use App\Services\RegistrationNotifier;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
@@ -158,8 +157,9 @@ class AuthController extends Controller
         $newToken = $user->createToken('mobile');
         $this->devices->record($user, $newToken, $request);
 
-        // Endi eski parolni bilmasdan yangisini qo'ya oladi.
-        app(PasswordGrantService::class)->grant($user);
+        // Parolni hali qo'ymadi — ilova keyingi kirishlarda ham parol
+        // o'rnatish ekranini ko'rsatadi.
+        $user->forceFill(['must_set_password_at' => now()])->save();
 
         return $this->success([
             'user' => new UserResource($user),
@@ -274,8 +274,10 @@ class AuthController extends Controller
         $user = $request->user();
         $user->update(['password' => $request->password]);
 
-        // Huquq bir martalik — parol qo'yilgach eski parol yana majburiy bo'ladi.
-        app(PasswordGrantService::class)->forget($user);
+        // Jarayon yakunlandi — eski parol yana majburiy bo'ladi.
+        if ($user->mustSetPassword()) {
+            $user->forceFill(['must_set_password_at' => null])->save();
+        }
 
         // Xavfsizlik: parol o'zgarsa barcha sessiyalar bekor qilinadi
         // (user_devices yozuvlari ham cascade orqali o'chadi), so'ng joriy

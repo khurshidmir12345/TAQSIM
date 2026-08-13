@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Services\PasswordGrantService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -44,6 +43,6 @@ class ChangePasswordRequest extends FormRequest
             return false;
         }
 
-        return ! app(PasswordGrantService::class)->has($user);
+        return ! $user->mustSetPassword();
     }
 }

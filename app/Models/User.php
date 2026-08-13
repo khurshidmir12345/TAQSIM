@@ -37,6 +37,7 @@ class User extends Authenticatable implements FilamentUser
         'avatar_url',
         'locale',
         'notification_prefs',
+        'must_set_password_at',
         'blocked_at',
         'email_verified_at',
         'phone_verified_at',
@@ -57,7 +58,19 @@ class User extends Authenticatable implements FilamentUser
             'telegram_chat_id' => 'integer',
             'is_accepted_policy' => 'boolean',
             'notification_prefs' => 'array',
+            'must_set_password_at' => 'datetime',
         ];
+    }
+
+    /**
+     * SMS kodi bilan kirgan, lekin parolni hali qo'ymagan.
+     *
+     * Shu holatda ilova parol o'rnatish ekranini ko'rsatadi va eski parol
+     * so'ralmaydi.
+     */
+    public function mustSetPassword(): bool
+    {
+        return $this->must_set_password_at !== null;
     }
 
     /** Foydalanuvchi admin tomonidan bloklanganmi. */

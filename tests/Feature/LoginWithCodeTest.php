@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\PhoneVerificationCode;
 use App\Models\User;
-use App\Services\PasswordGrantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -120,6 +119,25 @@ class LoginWithCodeTest extends TestCase
         );
     }
 
+    public function test_pending_state_survives_until_password_is_set(): void
+    {
+        $user = $this->makeUser();
+        $this->makeCode();
+
+        $token = $this->postJson('/api/v1/auth/login-with-code', [
+            'phone' => self::PHONE,
+            'code' => '1234',
+        ])->json('data.token');
+
+        // Foydalanuvchi parol qo'ymay chiqib ketdi — holat saqlanib qolishi
+        // kerak, aks holda qaytganda eski parol so'ralib, tiqilib qolardi.
+        $this->assertTrue($user->fresh()->mustSetPassword());
+
+        $this->withToken($token)->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('data.user.must_set_password', true);
+    }
+
     public function test_grant_is_single_use(): void
     {
         $user = $this->makeUser();
@@ -135,8 +153,8 @@ class LoginWithCodeTest extends TestCase
             'password_confirmation' => 'yangi12345',
         ])->assertOk();
 
-        // Parol qo'yilgach huquq tugaydi — eski parol yana majburiy.
-        $this->assertFalse(app(PasswordGrantService::class)->has($user->fresh()));
+        // Parol qo'yilgach holat tozalanadi — eski parol yana majburiy.
+        $this->assertFalse($user->fresh()->mustSetPassword());
     }
 
     public function test_normal_session_still_requires_current_password(): void

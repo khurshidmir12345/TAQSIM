@@ -53,10 +53,15 @@ class ReportController extends BaseShopController
         $data = $request->validate([
             'from' => ['sometimes', 'date'],
             'to' => ['sometimes', 'date', 'after_or_equal:from'],
+            'period' => ['sometimes', 'in:all,month,day'],
         ]);
 
         $to = $data['to'] ?? now()->toDateString();
-        $from = $data['from'] ?? now()->subDays(29)->toDateString();
+        // "Barchasi" da boshlanish sanasini ilova bilmaydi — uni server
+        // do'kondagi birinchi yozuvga qarab aniqlaydi.
+        $from = ($data['period'] ?? null) === 'all'
+            ? $this->reportService->earliestActivityDate($shop)
+            : $data['from'] ?? now()->subDays(29)->toDateString();
 
         return $this->success([
             'statistics' => $this->reportService->statistics($shop, $from, $to),

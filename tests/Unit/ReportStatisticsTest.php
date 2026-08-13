@@ -245,6 +245,28 @@ class ReportStatisticsTest extends TestCase
         $this->assertCount(7, $stats['series']);
     }
 
+    public function test_earliest_activity_date_finds_the_first_record(): void
+    {
+        // "Barchasi" davri shu sanadan boshlanadi.
+        $somsa = $this->makeCategory('Somsa', 1000);
+        $this->produce($somsa, 10, 5000, now()->subMonths(2)->toDateString());
+        $this->produce($somsa, 10, 5000, now()->subMonths(8)->toDateString());
+
+        $this->assertSame(
+            now()->subMonths(8)->toDateString(),
+            $this->service->earliestActivityDate($this->shop),
+        );
+    }
+
+    public function test_earliest_activity_date_falls_back_to_shop_creation(): void
+    {
+        // Yozuvsiz do'konda ham sana kerak — aks holda oraliq bo'sh qolardi.
+        $this->assertSame(
+            $this->shop->created_at->toDateString(),
+            $this->service->earliestActivityDate($this->shop),
+        );
+    }
+
     public function test_products_are_sorted_by_quantity(): void
     {
         $a = $this->makeCategory('Kam', 1000);

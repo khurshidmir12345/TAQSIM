@@ -232,6 +232,26 @@ class ReportService
      *
      * @return array{series: array<int,array<string,mixed>>, totals: array<string,float>, products: array<int,array<string,mixed>>}
      */
+    /**
+     * Do'kondagi eng birinchi yozuv sanasi — "Barchasi" davri shu yerdan
+     * boshlanadi. Aks holda oraliqni qattiq sana bilan belgilashga to'g'ri
+     * kelardi va grafik yillab bo'sh nuqtalar bilan boshlanardi.
+     */
+    public function earliestActivityDate(Shop $shop): string
+    {
+        $dates = array_filter([
+            $shop->productions()->min('date'),
+            $shop->breadReturns()->min('date'),
+            $shop->expenses()->min('date'),
+        ]);
+
+        if ($dates === []) {
+            return $shop->created_at?->toDateString() ?? now()->toDateString();
+        }
+
+        return Carbon::parse(min($dates))->toDateString();
+    }
+
     public function statistics(Shop $shop, string $from, string $to): array
     {
         $fromDt = Carbon::parse($from)->startOfDay();

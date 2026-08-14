@@ -20,10 +20,13 @@ class AppUpdateService
      *
      * Havola admin paneldan tahrirlanishi kerak — ilova do'konda qayta
      * nomlansa yoki manzil o'zgarsa, deploy kutib o'tirmaslik uchun.
+     *
+     * Har platforma uchun bir nechta yozilish qabul qilinadi: turni admin
+     * qo'lda kiritadi va pastki chiziqni unutish oson.
      */
-    private const STORE_LINK_TYPE = [
-        'ios' => 'app_store',
-        'android' => 'play_store',
+    private const STORE_LINK_TYPES = [
+        'ios' => ['app_store', 'appstore', 'ios'],
+        'android' => ['play_store', 'playstore', 'google_play', 'googleplay', 'android'],
     ];
 
     /**
@@ -67,7 +70,7 @@ class AppUpdateService
     private function storeUrl(string $platform): ?string
     {
         $fromDb = SystemLink::active()
-            ->where('type', self::STORE_LINK_TYPE[$platform])
+            ->whereIn('type', self::STORE_LINK_TYPES[$platform])
             ->value('url');
 
         $url = trim((string) ($fromDb ?? config("app_update.{$platform}.url")));

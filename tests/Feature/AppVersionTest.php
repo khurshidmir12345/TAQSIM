@@ -43,6 +43,21 @@ class AppVersionTest extends TestCase
             ->assertJsonPath('data.store_url', 'https://play.google.com/store/apps/details?id=yangi.paket');
     }
 
+    public function test_type_may_be_written_without_an_underscore(): void
+    {
+        // Turni admin qo'lda kiritadi — "playstore" ham tushunilishi kerak.
+        $this->configure(true, '1.2.8');
+        SystemLink::create([
+            'name' => 'Play Market',
+            'type' => 'playstore',
+            'url' => 'https://play.google.com/store/apps/details?id=uz.taqseem.mobile&pcampaignid=web_share',
+            'is_active' => true,
+        ]);
+
+        $this->getJson('/api/v1/app-version?platform=android&version=1.2.7')
+            ->assertJsonPath('data.store_url', 'https://play.google.com/store/apps/details?id=uz.taqseem.mobile&pcampaignid=web_share');
+    }
+
     public function test_inactive_store_link_falls_back_to_config(): void
     {
         $this->configure(true, '1.2.8');
@@ -63,7 +78,7 @@ class AppVersionTest extends TestCase
         $this->configure(true, '1.2.8', '1.2.8');
         SystemLink::create([
             'name' => 'App Store',
-            'type' => 'app_store',
+            'type' => 'appstore',
             'url' => 'https://apps.apple.com/uz/app/id6765786644',
             'is_active' => true,
         ]);

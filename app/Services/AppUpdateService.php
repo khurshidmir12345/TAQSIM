@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\SystemLink;
+
 /**
  * Ilova versiyasini `.env` dagi oxirgi versiya bilan solishtiradi.
  *
@@ -12,6 +14,17 @@ class AppUpdateService
 {
     /** Qo'llab-quvvatlanadigan platformalar. */
     private const PLATFORMS = ['android', 'ios'];
+
+    /**
+     * Do'kon havolasi saqlanadigan `system_links.type` qiymatlari.
+     *
+     * Havola admin paneldan tahrirlanishi kerak — ilova do'konda qayta
+     * nomlansa yoki manzil o'zgarsa, deploy kutib o'tirmaslik uchun.
+     */
+    private const STORE_LINK_TYPE = [
+        'ios' => 'app_store',
+        'android' => 'play_store',
+    ];
 
     /**
      * @return array{
@@ -28,7 +41,7 @@ class AppUpdateService
         $platform = in_array($platform, self::PLATFORMS, true) ? $platform : 'android';
         $enabled = (bool) config('app_update.enabled');
         $latest = trim((string) config("app_update.{$platform}.version"));
-        $storeUrl = trim((string) config("app_update.{$platform}.url"));
+        $storeUrl = $this->storeUrl($platform);
 
         $updateAvailable = $enabled
             && $latest !== ''
@@ -42,8 +55,24 @@ class AppUpdateService
             'platform' => $platform,
             'current_version' => $currentVersion ?: null,
             'latest_version' => $latest !== '' ? $latest : null,
-            'store_url' => $storeUrl !== '' ? $storeUrl : null,
+            'store_url' => $storeUrl,
         ];
+    }
+
+    /**
+     * Do'kon havolasi: avval bazadagi faol yozuv, bo'lmasa `.env` dagi qiymat.
+     *
+     * Baza ustun turadi — havolani admin paneldan o'zgartirish mumkin bo'lsin.
+     */
+    private function storeUrl(string $platform): ?string
+    {
+        $fromDb = SystemLink::active()
+            ->where('type', self::STORE_LINK_TYPE[$platform])
+            ->value('url');
+
+        $url = trim((string) ($fromDb ?? config("app_update.{$platform}.url")));
+
+        return $url !== '' ? $url : null;
     }
 
     /**

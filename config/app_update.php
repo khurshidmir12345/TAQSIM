@@ -25,7 +25,9 @@ return [
     | build raqami bilan `1.2.8+40` (build raqami faqat versiyalar teng
     | bo'lganda solishtiriladi).
     |
-    | `url` — "Yangilash" tugmasi ochadigan do'kon manzili. Bo'sh bo'lsa
+    | `url` — "Yangilash" tugmasi ochadigan do'kon manzili. Bu faqat zaxira
+    | qiymat: admin paneldagi `system_links` da `app_store` yoki `play_store`
+    | turidagi faol yozuv bo'lsa, o'sha ustun turadi. Ikkalasi ham bo'sh bo'lsa
     | modalka faqat xabar sifatida ko'rinadi, tugmasiz.
     |
     | iOS va Android alohida: App Store tekshiruvi kechikkanda iOS

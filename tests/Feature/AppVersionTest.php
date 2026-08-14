@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\SystemLink;
 use App\Services\AppUpdateService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -10,6 +12,8 @@ use Tests\TestCase;
  */
 class AppVersionTest extends TestCase
 {
+    use RefreshDatabase;
+
     private function configure(bool $enabled, string $androidVersion, string $iosVersion = ''): void
     {
         config([
@@ -19,6 +23,57 @@ class AppVersionTest extends TestCase
             'app_update.ios.version' => $iosVersion,
             'app_update.ios.url' => '',
         ]);
+    }
+
+    // ─── Do'kon havolasi ─────────────────────────────────────────────────
+
+    public function test_store_url_comes_from_the_database_when_set(): void
+    {
+        // Havola admin paneldan tahrirlanadi — deploy kutilmasin.
+        $this->configure(true, '1.2.8');
+        SystemLink::create([
+            'name' => 'Play Market',
+            'type' => 'play_store',
+            'url' => 'https://play.google.com/store/apps/details?id=yangi.paket',
+            'is_active' => true,
+        ]);
+
+        $this->getJson('/api/v1/app-version?platform=android&version=1.2.7')
+            ->assertOk()
+            ->assertJsonPath('data.store_url', 'https://play.google.com/store/apps/details?id=yangi.paket');
+    }
+
+    public function test_inactive_store_link_falls_back_to_config(): void
+    {
+        $this->configure(true, '1.2.8');
+        SystemLink::create([
+            'name' => 'Play Market',
+            'type' => 'play_store',
+            'url' => 'https://example.test/eski',
+            'is_active' => false,
+        ]);
+
+        $this->getJson('/api/v1/app-version?platform=android&version=1.2.7')
+            ->assertOk()
+            ->assertJsonPath('data.store_url', 'https://play.google.com/store/apps/details?id=uz.taqseem.mobile');
+    }
+
+    public function test_ios_and_android_links_do_not_mix(): void
+    {
+        $this->configure(true, '1.2.8', '1.2.8');
+        SystemLink::create([
+            'name' => 'App Store',
+            'type' => 'app_store',
+            'url' => 'https://apps.apple.com/uz/app/id6765786644',
+            'is_active' => true,
+        ]);
+
+        $this->getJson('/api/v1/app-version?platform=ios&version=1.2.7')
+            ->assertJsonPath('data.store_url', 'https://apps.apple.com/uz/app/id6765786644');
+
+        // Android'da app_store yozuvi ishlatilmasligi kerak.
+        $this->getJson('/api/v1/app-version?platform=android&version=1.2.7')
+            ->assertJsonPath('data.store_url', 'https://play.google.com/store/apps/details?id=uz.taqseem.mobile');
     }
 
     public function test_older_app_version_gets_an_update(): void

@@ -21,9 +21,12 @@ return new class extends Migration
         Schema::create('access_notices', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
-            $table->timestamp('access_until');
+            // `timestamp` emas, `dateTime`: MySQL'da ikkinchi va undan keyingi
+            // NOT NULL TIMESTAMP ustuniga '0000-00-00' standart qiymati
+            // qo'yiladi va u strict rejimda rad etiladi.
+            $table->dateTime('access_until');
             $table->unsignedSmallInteger('days_before');
-            $table->timestamp('sent_at');
+            $table->dateTime('sent_at');
             $table->timestamps();
 
             $table->unique(['user_id', 'access_until', 'days_before'], 'access_notices_unique');

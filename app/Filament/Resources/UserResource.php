@@ -254,63 +254,58 @@ class UserResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('grantMonth')
-                        ->label('1 oy berish')
-                        ->icon('heroicon-o-plus-circle')
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->modalHeading('Kirish muddatini 1 oyga uzaytirish')
-                        ->modalDescription('Barcha bo\'limlar ochiladi. Muddat hozirgi sanadan yoki mavjud muddat oxiridan — qaysi biri kechroq bo\'lsa — hisoblanadi.')
-                        ->action(fn (User $record) => static::grantAccess($record, months: 1)),
-                    Tables\Actions\Action::make('grantYear')
-                        ->label('1 yil berish')
-                        ->icon('heroicon-o-plus-circle')
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->modalHeading('Kirish muddatini 1 yilga uzaytirish')
-                        ->action(fn (User $record) => static::grantAccess($record, months: 12)),
-                    Tables\Actions\Action::make('grantCustom')
-                        ->label('Sana belgilash')
-                        ->icon('heroicon-o-calendar-days')
-                        ->color('success')
-                        ->form([
-                            Forms\Components\DatePicker::make('access_until')
-                                ->label('Shu sanagacha ochiq')
-                                ->required()
-                                ->native(false)
-                                ->minDate(now())
-                                ->default(fn (User $record) => $record->access_until ?? now()->addMonth()),
-                        ])
-                        ->action(function (User $record, array $data): void {
-                            $record->forceFill([
-                                'access_until' => \Illuminate\Support\Carbon::parse($data['access_until'])->endOfDay(),
-                                'access_source' => 'paid',
-                            ])->save();
-
-                            Notification::make()
-                                ->title('Muddat yangilandi: ' . $record->access_until->format('d.m.Y'))
-                                ->success()
-                                ->send();
-                        }),
-                    Tables\Actions\Action::make('revokeAccess')
-                        ->label('Kirishni yopish')
-                        ->icon('heroicon-o-minus-circle')
-                        ->color('danger')
-                        ->requiresConfirmation()
-                        ->modalHeading('Pullik bo\'limlarni yopish')
-                        ->modalDescription('Statistika, buyurtmalar, xodimlar va ikkinchi biznes darhol yopiladi. Bepul bo\'limlar ochiq qoladi.')
-                        ->visible(fn (User $record): bool => $record->hasFullAccess())
-                        ->action(function (User $record): void {
-                            $record->forceFill(['access_until' => now()->subSecond()])->save();
-
-                            Notification::make()->title('Pullik bo\'limlar yopildi')->success()->send();
-                        }),
-                ])
-                    ->label('Kirish muddati')
+                Tables\Actions\Action::make('grantAccess')
+                    ->label('Premium berish')
                     ->icon('heroicon-o-key')
+                    ->color('success')
                     ->button()
-                    ->color('gray'),
+                    ->modalHeading('Premium berish')
+                    ->modalSubmitActionLabel('Ochish')
+                    ->modalWidth('lg')
+                    ->fillForm(fn (User $record): array => [
+                        'duration' => '1_month',
+                        'access_until' => static::defaultGrantDate($record),
+                    ])
+                    ->form([
+                        Forms\Components\Placeholder::make('hozirgi')
+                            ->label('Hozirgi holat')
+                            ->content(fn (User $record): string => static::accessSummary($record)),
+                        Forms\Components\Radio::make('duration')
+                            ->label('Qancha muddatga')
+                            ->options(static::GRANT_DURATIONS)
+                            ->required()
+                            ->live()
+                            ->helperText('Muddat bugundan yoki mavjud muddat oxiridan — qaysi biri kechroq bo\'lsa — hisoblanadi.'),
+                        Forms\Components\DatePicker::make('access_until')
+                            ->label('Shu sanagacha ochiq')
+                            ->native(false)
+                            ->minDate(now())
+                            ->required(fn (Forms\Get $get): bool => $get('duration') === 'custom')
+                            ->visible(fn (Forms\Get $get): bool => $get('duration') === 'custom'),
+                    ])
+                    ->action(function (User $record, array $data): void {
+                        static::applyGrant($record, $data);
+
+                        Notification::make()
+                            ->title('Premium ochildi: ' . $record->access_until->format('d.m.Y') . ' gacha')
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('revokeAccess')
+                    ->label('Yopish')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('danger')
+                    ->button()
+                    ->outlined()
+                    ->requiresConfirmation()
+                    ->modalHeading('Pullik bo\'limlarni yopish')
+                    ->modalDescription('Statistika, Buyurtmalar, Xodimlar va ikkinchi biznes darhol yopiladi. Bepul bo\'limlar ochiq qoladi.')
+                    ->visible(fn (User $record): bool => $record->hasFullAccess())
+                    ->action(function (User $record): void {
+                        $record->forceFill(['access_until' => now()->subSecond()])->save();
+
+                        Notification::make()->title('Pullik bo\'limlar yopildi')->success()->send();
+                    }),
                 Tables\Actions\Action::make('block')
                     ->label('Bloklash')
                     ->icon('heroicon-o-lock-closed')
@@ -372,27 +367,75 @@ class UserResource extends Resource
         ];
     }
 
-    /**
-     * Kirish muddatini uzaytiradi.
-     *
-     * Sanoq hozirgi vaqtdan yoki mavjud muddat oxiridan — qaysi biri kechroq
-     * bo'lsa — boshlanadi: muddati tugamagan odamga qo'shimcha oy berilsa,
-     * qolgan kunlari yo'qolib ketmasin.
-     */
-    private static function grantAccess(User $user, int $months): void
+    /** Admin tanlay oladigan muddatlar. */
+    private const GRANT_DURATIONS = [
+        '1_month' => '1 oy',
+        '3_months' => '3 oy',
+        '6_months' => '6 oy',
+        '1_year' => '1 yil',
+        'custom' => 'Boshqa sana',
+    ];
+
+    /** Oynada ko'rsatiladigan hozirgi holat. */
+    private static function accessSummary(User $user): string
     {
-        $from = $user->access_until !== null && $user->access_until->isFuture()
+        $label = match ($user->accessStatus()) {
+            'paid' => 'Premium',
+            'trial' => 'Sinov muddatida',
+            default => 'Muddati tugagan',
+        };
+
+        if ($user->access_until === null) {
+            return $label;
+        }
+
+        $days = $user->accessDaysLeft();
+        $suffix = $days !== null && $days >= 0
+            ? " — {$days} kun qoldi"
+            : ' — muddati o\'tgan';
+
+        return $label . ' (' . $user->access_until->format('d.m.Y') . ')' . $suffix;
+    }
+
+    /** "Boshqa sana" tanlanganda taklif qilinadigan sana. */
+    private static function defaultGrantDate(User $user): string
+    {
+        return static::grantStart($user)->copy()->addMonth()->toDateString();
+    }
+
+    /**
+     * Sanoq boshlanadigan nuqta.
+     *
+     * Muddati tugamagan odamga qo'shimcha oy berilsa, qolgan kunlari
+     * yo'qolib ketmasligi kerak — shuning uchun kechrog'i olinadi.
+     */
+    private static function grantStart(User $user): \Illuminate\Support\Carbon
+    {
+        return $user->access_until !== null && $user->access_until->isFuture()
             ? $user->access_until
             : now();
+    }
+
+    /**
+     * Tanlangan muddatni qo'llaydi.
+     *
+     * `access_source` doim `paid` bo'ladi: admin qo'lda ochgan ekan, bu
+     * endi sinov muddati emas.
+     */
+    private static function applyGrant(User $user, array $data): void
+    {
+        $until = match ($data['duration'] ?? null) {
+            '1_month' => static::grantStart($user)->copy()->addMonth(),
+            '3_months' => static::grantStart($user)->copy()->addMonths(3),
+            '6_months' => static::grantStart($user)->copy()->addMonths(6),
+            '1_year' => static::grantStart($user)->copy()->addYear(),
+            'custom' => \Illuminate\Support\Carbon::parse($data['access_until'])->endOfDay(),
+            default => static::grantStart($user)->copy()->addMonth(),
+        };
 
         $user->forceFill([
-            'access_until' => $from->copy()->addMonths($months),
+            'access_until' => $until,
             'access_source' => 'paid',
         ])->save();
-
-        Notification::make()
-            ->title('Ochiq: ' . $user->access_until->format('d.m.Y') . ' gacha')
-            ->success()
-            ->send();
     }
 }

@@ -142,6 +142,27 @@ class AccessNoticeTest extends TestCase
         $this->assertSame(0, AccessNotice::query()->count());
     }
 
+    /**
+     * Ogohlantirish pullik foydalanuvchiga ham boradi.
+     *
+     * Admin bir oyga ochib bergan mijoz oy tugashidan oldin xabar olishi
+     * kerak — aks holda u to'lovni yangilashni unutib qoladi.
+     */
+    public function test_paid_users_are_warned_too(): void
+    {
+        [$user] = $this->makeOwner(7);
+        $user->forceFill(['access_source' => 'paid'])->save();
+
+        $this->expectSends(1);
+
+        SendAccessNotices::dispatchSync();
+
+        $this->assertDatabaseHas('access_notices', [
+            'user_id' => $user->id,
+            'days_before' => 7,
+        ]);
+    }
+
     public function test_blocked_users_are_skipped(): void
     {
         [$user] = $this->makeOwner(7);

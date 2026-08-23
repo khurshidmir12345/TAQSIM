@@ -185,6 +185,41 @@ class AccessTest extends TestCase
             ->assertJson(['code' => 'feature_unavailable']);
     }
 
+    /**
+     * Pullik muddat ham tugaydi.
+     *
+     * Admin bir oyga ochib bergan foydalanuvchi o'sha oy o'tgach xuddi
+     * sinov muddati tugagandek yopiladi — qaror faqat sanaga qarab
+     * chiqariladi, `access_source` ga emas.
+     */
+    public function test_paid_period_also_expires(): void
+    {
+        $this->owner->forceFill([
+            'access_until' => now()->addMonth(),
+            'access_source' => 'paid',
+        ])->save();
+
+        $this->assertSame('paid', $this->owner->accessStatus());
+
+        $this->actingAs($this->owner)
+            ->getJson("/api/v1/shops/{$this->shop->id}/reports/statistics")
+            ->assertOk();
+
+        // Bir oy o'tdi.
+        $this->travelTo(now()->addMonth()->addDay());
+
+        $this->assertSame('expired', $this->owner->fresh()->accessStatus());
+
+        $this->actingAs($this->owner)
+            ->getJson("/api/v1/shops/{$this->shop->id}/reports/statistics")
+            ->assertForbidden()
+            ->assertJson(['code' => 'feature_unavailable']);
+
+        $this->actingAs($this->owner)
+            ->getJson("/api/v1/shops/{$this->shop->id}/cash")
+            ->assertOk();
+    }
+
     // ── Biznes soni ───────────────────────────────────────────────────────
 
     public function test_second_business_is_blocked_when_the_period_ends(): void

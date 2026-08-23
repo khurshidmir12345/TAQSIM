@@ -42,6 +42,19 @@ class AccessAdminActionTest extends TestCase
         Livewire::test(ListUsers::class)->assertOk();
     }
 
+    /** Oyna ochilganda forma xatosiz chiziladi (muddat tanlovi, sana maydoni). */
+    public function test_grant_dialog_opens(): void
+    {
+        $this->actingAsAdmin();
+
+        $user = User::factory()->create();
+
+        Livewire::test(ListUsers::class)
+            ->mountTableAction('grantAccess', $user)
+            ->assertTableActionMounted('grantAccess')
+            ->assertHasNoTableActionErrors();
+    }
+
     public function test_granting_a_month_to_an_expired_user_starts_from_today(): void
     {
         $this->actingAsAdmin();
@@ -50,7 +63,7 @@ class AccessAdminActionTest extends TestCase
         $user->forceFill(['access_until' => now()->subDays(10)])->save();
 
         Livewire::test(ListUsers::class)
-            ->callTableAction('grantMonth', $user)
+            ->callTableAction('grantAccess', $user, ['duration' => '1_month'])
             ->assertHasNoTableActionErrors();
 
         $user->refresh();
@@ -75,13 +88,35 @@ class AccessAdminActionTest extends TestCase
         $user->forceFill(['access_until' => now()->addDays(10)])->save();
 
         Livewire::test(ListUsers::class)
-            ->callTableAction('grantMonth', $user)
+            ->callTableAction('grantAccess', $user, ['duration' => '1_month'])
             ->assertHasNoTableActionErrors();
 
         $this->assertSame(
             now()->addDays(10)->addMonth()->toDateString(),
             $user->refresh()->access_until->toDateString(),
         );
+    }
+
+    /** Oraliq muddatlar ham tanlanadi: admin har xil kelishuvga duch keladi. */
+    public function test_granting_three_and_six_months(): void
+    {
+        $this->actingAsAdmin();
+
+        foreach (['3_months' => 3, '6_months' => 6] as $option => $months) {
+            $user = User::factory()->create();
+            $user->forceFill(['access_until' => now()->subDay()])->save();
+
+            Livewire::test(ListUsers::class)
+                ->callTableAction('grantAccess', $user, ['duration' => $option])
+                ->assertHasNoTableActionErrors();
+
+            $this->assertSame(
+                now()->addMonths($months)->toDateString(),
+                $user->refresh()->access_until->toDateString(),
+                "{$option} noto'g'ri hisoblandi",
+            );
+            $this->assertSame('paid', $user->access_source);
+        }
     }
 
     public function test_granting_a_year(): void
@@ -92,7 +127,7 @@ class AccessAdminActionTest extends TestCase
         $user->forceFill(['access_until' => now()->subDay()])->save();
 
         Livewire::test(ListUsers::class)
-            ->callTableAction('grantYear', $user)
+            ->callTableAction('grantAccess', $user, ['duration' => '1_year'])
             ->assertHasNoTableActionErrors();
 
         $this->assertSame(
@@ -126,7 +161,10 @@ class AccessAdminActionTest extends TestCase
         $target = now()->addDays(45);
 
         Livewire::test(ListUsers::class)
-            ->callTableAction('grantCustom', $user, ['access_until' => $target->toDateString()])
+            ->callTableAction('grantAccess', $user, [
+                'duration' => 'custom',
+                'access_until' => $target->toDateString(),
+            ])
             ->assertHasNoTableActionErrors();
 
         $user->refresh();

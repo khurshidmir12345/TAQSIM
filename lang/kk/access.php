@@ -8,14 +8,14 @@
  * tashqarida — botda, SMS'da, qo'ng'iroqda — bularni aytish mumkin.
  *
  * Qisqa yozilgan: uzun xabarni hech kim oxirigacha o'qimaydi. Har biri
- * bitta sarlavha, bitta izoh va bitta aniq harakatdan iborat.
+ * bitta sarlavha, bitta izoh va bitta chaqiruvdan iborat.
  */
 
 return [
     'notice' => [
-        'ending' => "⏳ Taqseem: :days күн қалды\n\nСодан кейін Статистика, Тапсырыстар және Қызметкерлер жабылады. Қалғаны тегін жұмыс істейді.\n\nАшық қалдыру 👉 :contact",
-        'ending_today' => "⏳ Taqseem: бүгін соңғы күн\n\nЕртеңнен Статистика, Тапсырыстар және Қызметкерлер жабылады. Қалғаны тегін жұмыс істейді.\n\nАшық қалдыру 👉 :contact",
-        'ended' => "🔒 Статистика, Тапсырыстар және Қызметкерлер жабылды\n\nҚалғаны бұрынғыдай тегін.\n\nҚайта ашу 👉 :contact",
+        'ending' => "⏳ Taqseem: :days күн қалды\n\nСодан кейін Статистика, Тапсырыстар және Қызметкерлер жабылады. Қалғаны тегін жұмыс істейді.\n\nБарлық мүмкіндіктерді пайдалану үшін премиум алыңыз 👉 :contact",
+        'ending_today' => "⏳ Taqseem: бүгін соңғы күн\n\nЕртеңнен Статистика, Тапсырыстар және Қызметкерлер жабылады. Қалғаны тегін жұмыс істейді.\n\nБарлық мүмкіндіктерді пайдалану үшін премиум алыңыз 👉 :contact",
+        'ended' => "🔒 Статистика, Тапсырыстар және Қызметкерлер жабылды\n\nҚалғаны бұрынғыдай тегін.\n\nБарлық мүмкіндіктерді пайдалану үшін премиум алыңыз 👉 :contact",
     ],
 
 ];

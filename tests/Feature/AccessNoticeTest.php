@@ -168,16 +168,16 @@ class AccessNoticeTest extends TestCase
     /**
      * Uchta bosqichning matni bir-biridan farq qiladi.
      *
-     * Tugash kuni "bugun tugaydi" deyilishi muhim: job soat 10:00 da
+     * Tugash kuni "bugun oxirgi kun" deyilishi muhim: job soat 10:00 da
      * ishlaydi, muddat esa o'sha kuni kechroq tugashi mumkin — o'shanda
      * "yopildi" deyish noto'g'ri bo'lardi, chunki bo'limlar hali ochiq.
      */
     public function test_each_stage_has_its_own_wording(): void
     {
         $cases = [
-            [7, 'kundan keyin tugaydi'],
-            [0, 'bugun tugaydi'],
-            [-1, 'muddatingiz tugadi'],
+            [7, '7 kun qoldi'],
+            [0, 'bugun oxirgi kun'],
+            [-1, 'yopildi'],
         ];
 
         foreach ($cases as $i => [$days, $needle]) {

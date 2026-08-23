@@ -81,6 +81,6 @@ return [
     |
     */
 
-    'contact' => env('ACCESS_CONTACT', '@taqseem_uz'),
+    'contact' => env('ACCESS_CONTACT', '@taqseem_admin_bot'),
 
 ];

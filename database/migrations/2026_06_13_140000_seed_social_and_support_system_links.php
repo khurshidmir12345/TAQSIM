@@ -20,7 +20,7 @@ return new class extends Migration
             [
                 'type' => 'telegram',
                 'name' => 'Telegram kanali',
-                'url'  => 'https://t.me/taqseem_uz',
+                'url'  => 'https://t.me/taqseem_kanal',
             ],
             [
                 'type' => 'instagram',

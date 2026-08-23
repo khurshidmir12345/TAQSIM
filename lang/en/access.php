@@ -6,13 +6,16 @@
  * Bu matnlar ataylab serverda turadi: ilova ichida narx, to'lov yoki tarif
  * haqida bir og'iz so'z bo'lmasligi kerak (do'kon qoidalari). Ilovadan
  * tashqarida — botda, SMS'da, qo'ng'iroqda — bularni aytish mumkin.
+ *
+ * Qisqa yozilgan: uzun xabarni hech kim oxirigacha o'qimaydi. Har biri
+ * bitta sarlavha, bitta izoh va bitta aniq harakatdan iborat.
  */
 
 return [
     'notice' => [
-        'ending' => "Hello!\n\nYour full access to Taqseem ends in :days day(s).\n\nAfter that, Statistics, Orders and Employees will close. Home, products and recipes, production, returns and the cash register keep working for free.\n\nTo keep using every feature, get the premium plan — contact the administrator: :contact",
-        'ending_today' => "Hello!\n\nYour full access to Taqseem ends today.\n\nFrom tomorrow, Statistics, Orders and Employees will be closed. Home, products and recipes, production, returns and the cash register keep working for free.\n\nTo keep using every feature, get the premium plan — contact the administrator: :contact",
-        'ended' => "Hello!\n\nYour full access to Taqseem has ended. Statistics, Orders and Employees are now closed.\n\nHome, products and recipes, production, returns and the cash register keep working for free as before.\n\nTo reopen the closed sections, get the premium plan — contact the administrator: :contact",
+        'ending' => "⏳ Taqseem: :days days left\n\nAfter that Statistics, Orders and Employees close. Everything else stays free.\n\nKeep them open 👉 :contact",
+        'ending_today' => "⏳ Taqseem: last day\n\nFrom tomorrow Statistics, Orders and Employees close. Everything else stays free.\n\nKeep them open 👉 :contact",
+        'ended' => "🔒 Statistics, Orders and Employees are closed\n\nEverything else works free as before.\n\nOpen them again 👉 :contact",
     ],
 
 ];

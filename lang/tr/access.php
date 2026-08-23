@@ -6,13 +6,16 @@
  * Bu matnlar ataylab serverda turadi: ilova ichida narx, to'lov yoki tarif
  * haqida bir og'iz so'z bo'lmasligi kerak (do'kon qoidalari). Ilovadan
  * tashqarida — botda, SMS'da, qo'ng'iroqda — bularni aytish mumkin.
+ *
+ * Qisqa yozilgan: uzun xabarni hech kim oxirigacha o'qimaydi. Har biri
+ * bitta sarlavha, bitta izoh va bitta aniq harakatdan iborat.
  */
 
 return [
     'notice' => [
-        'ending' => "Merhaba!\n\nTaqseem'deki tam erişim süreniz :days gün sonra sona eriyor.\n\nBundan sonra İstatistik, Siparişler ve Çalışanlar bölümleri kapanacak. Ana sayfa, ürünler ve tarifler, üretim, iadeler ve kasa ücretsiz çalışmaya devam edecek.\n\nTüm özellikleri kullanmaya devam etmek için premium tarifeyi alın — yönetici ile iletişime geçin: :contact",
-        'ending_today' => "Merhaba!\n\nTaqseem'deki tam erişim süreniz bugün sona eriyor.\n\nYarından itibaren İstatistik, Siparişler ve Çalışanlar bölümleri kapanacak. Ana sayfa, ürünler ve tarifler, üretim, iadeler ve kasa ücretsiz çalışmaya devam edecek.\n\nTüm özellikleri kullanmaya devam etmek için premium tarifeyi alın — yönetici ile iletişime geçin: :contact",
-        'ended' => "Merhaba!\n\nTaqseem'deki tam erişim süreniz sona erdi. İstatistik, Siparişler ve Çalışanlar bölümleri kapandı.\n\nAna sayfa, ürünler ve tarifler, üretim, iadeler ve kasa eskisi gibi ücretsiz çalışıyor.\n\nKapanan bölümleri yeniden açmak için premium tarifeyi alın — yönetici ile iletişime geçin: :contact",
+        'ending' => "⏳ Taqseem: :days gün kaldı\n\nSonrasında İstatistik, Siparişler ve Çalışanlar kapanır. Gerisi ücretsiz çalışır.\n\nAçık kalsın 👉 :contact",
+        'ending_today' => "⏳ Taqseem: bugün son gün\n\nYarından İstatistik, Siparişler ve Çalışanlar kapanır. Gerisi ücretsiz çalışır.\n\nAçık kalsın 👉 :contact",
+        'ended' => "🔒 İstatistik, Siparişler ve Çalışanlar kapandı\n\nGerisi eskisi gibi ücretsiz.\n\nTekrar aç 👉 :contact",
     ],
 
 ];

@@ -6,10 +6,12 @@ use App\Enums\ShopUserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreShopRequest;
 use App\Http\Requests\UpdateShopRequest;
+use App\Http\Middleware\EnsureShopFeature;
 use App\Http\Resources\ShopResource;
 use App\Models\CustomBusinessType;
 use App\Models\Currency;
 use App\Models\Shop;
+use App\Services\AccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -20,7 +22,10 @@ class ShopController extends Controller
     {
         $shops = $request->user()
             ->shops()
-            ->with(['businessType', 'currency'])
+            // `userShops.user` — do'kon egasini aniqlash uchun (ochiq
+            // bo'limlar ro'yxati shundan hisoblanadi). Bittalab so'rash
+            // do'kon soniga qarab N+1 berardi.
+            ->with(['businessType', 'currency', 'userShops.user'])
             ->orderBy('name')
             ->get();
 
@@ -31,6 +36,16 @@ class ShopController extends Controller
 
     public function store(StoreShopRequest $request): JsonResponse
     {
+        // Ikkinchi va undan keyingi biznes — muddat ichidagilarga.
+        // Birinchisi doim bepul, aks holda yangi user umuman boshlay olmaydi.
+        $user = $request->user();
+
+        if ($user->ownedShops()->exists()
+            && ! app(AccessService::class)->userHasFeature($user, 'multi_shop')
+        ) {
+            return EnsureShopFeature::denied();
+        }
+
         $currencyId = $request->currency_id
             ?? Currency::where('code', 'UZS')->value('id')
             ?? Currency::first()?->id;

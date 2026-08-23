@@ -155,10 +155,13 @@ Route::prefix('v1')->group(function () {
             Route::delete('expense-categories/{category}', [ExpenseCategoryController::class, 'destroy'])
                 ->middleware('shop.perm:manage_expenses');
 
+            // ── Mijozlar va buyurtmalar (muddat tugagach yopiladi) ──
             Route::apiResource('customers', CustomerController::class)
                 ->only(['index', 'store', 'show', 'update', 'destroy'])
-                ->middleware('shop.perm:manage_orders,read');
-            Route::prefix('customer-orders')->middleware('shop.perm:manage_orders,read')->group(function () {
+                ->middleware(['shop.perm:manage_orders,read', 'shop.feature:orders']);
+            Route::prefix('customer-orders')
+                ->middleware(['shop.perm:manage_orders,read', 'shop.feature:orders'])
+                ->group(function () {
                 Route::get('/', [CustomerOrderController::class, 'index']);
                 Route::post('/', [CustomerOrderController::class, 'store']);
                 Route::get('{customer_order}', [CustomerOrderController::class, 'show']);
@@ -170,14 +173,18 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::middleware('shop.perm:view_reports,read')->group(function () {
+                // Bosh sahifa va tarix shulardan oziqlanadi — doim bepul.
                 Route::get('reports/daily', [ReportController::class, 'daily']);
                 Route::get('reports/range', [ReportController::class, 'range']);
                 Route::get('reports/summary', [ReportController::class, 'summary']);
-                Route::get('reports/statistics', [ReportController::class, 'statistics']);
+
+                // Statistika sahifasi — muddat tugagach yopiladi.
+                Route::get('reports/statistics', [ReportController::class, 'statistics'])
+                    ->middleware('shop.feature:reports');
             });
 
-            // ── Xodimlar (faqat owner — 100% bepul) ─────────────────
-            Route::middleware('shop.perm:owner')->group(function () {
+            // ── Xodimlar (faqat owner; muddat tugagach yopiladi) ────
+            Route::middleware(['shop.perm:owner', 'shop.feature:employees'])->group(function () {
                 Route::get('employees', [EmployeeController::class, 'index']);
                 Route::post('employees', [EmployeeController::class, 'store']);
                 Route::post('employees/confirm', [EmployeeController::class, 'confirm']);

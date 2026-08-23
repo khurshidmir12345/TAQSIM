@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'blocked' => \App\Http\Middleware\EnsureUserNotBlocked::class,
             'shop.perm' => \App\Http\Middleware\EnsureShopPermission::class,
+            'shop.feature' => \App\Http\Middleware\EnsureShopFeature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

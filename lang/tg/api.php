@@ -19,6 +19,7 @@ return [
         'forbidden_shop_bakery' => 'Ба ин нонвойхона дастрасӣ нест.',
         'forbidden_owner_only' => 'Ин амалро танҳо соҳиб иҷро карда метавонад.',
         'forbidden_permission' => 'Шумо ба ин бахш дастрасӣ надоред.',
+        'feature_unavailable' => 'Ин бахш дар ҳисоби шумо фаъол нест.',
         'rate_limit' => 'Хеле зиёд дархост. Каме интизор шавед.',
         'server_error' => 'Хатои сервер.',
         'invalid_expense_category' => 'Навъи харҷ нодуруст аст ё ба шумо тааллуқ надорад.',

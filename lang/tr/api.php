@@ -19,6 +19,7 @@ return [
         'forbidden_shop_bakery' => 'Bu fırına erişim yok.',
         'forbidden_owner_only' => 'Bu işlemi yalnızca sahip yapabilir.',
         'forbidden_permission' => 'Bu bölüm için yetkiniz yok.',
+        'feature_unavailable' => 'Bu bölüm hesabınızda etkin değil.',
         'rate_limit' => 'Çok fazla istek. Lütfen bekleyin.',
         'server_error' => 'Sunucu hatası.',
         'invalid_expense_category' => 'Geçersiz gider kategorisi veya size ait değil.',

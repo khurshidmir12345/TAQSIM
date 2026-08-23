@@ -8,10 +8,6 @@ return [
     'ping' => 'Taqseem API is running',
 
     'errors' => [
-        'subscription_required' => 'Your subscription has expired. Choose a plan to continue.',
-        'plan_limit_reached' => 'Plan limit reached. Upgrade to a higher plan.',
-        'insufficient_balance' => 'Insufficient balance. Please top up your wallet.',
-        'yearly_not_available' => 'Yearly subscription is not available for this plan.',
         'generic' => 'Error',
         'unauthenticated' => 'Authentication required.',
         'validation_failed' => 'The provided data is invalid.',
@@ -22,6 +18,7 @@ return [
         'forbidden_shop_bakery' => 'You do not have access to this bakery.',
         'forbidden_owner_only' => 'Only the owner can perform this action.',
         'forbidden_permission' => 'You do not have permission for this section.',
+        'feature_unavailable' => 'This section is not enabled for your account.',
         'rate_limit' => 'Too many requests. Please wait a moment.',
         'server_error' => 'A server error occurred.',
         'invalid_expense_category' => 'Invalid expense category or it does not belong to you.',

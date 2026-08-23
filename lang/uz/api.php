@@ -19,6 +19,7 @@ return [
         'forbidden_shop_bakery' => 'Bu nonvoyxonaga kirishga ruxsat yo‘q.',
         'forbidden_owner_only' => 'Faqat egasi bu amalni bajara oladi.',
         'forbidden_permission' => 'Bu bo‘lim uchun ruxsatingiz yo‘q.',
+        'feature_unavailable' => 'Bu bo‘lim hisobingizda yoqilmagan.',
         'rate_limit' => 'Juda ko‘p so‘rov. Biroz kuting.',
         'server_error' => 'Serverda xatolik yuz berdi.',
         'invalid_expense_category' => 'Xarajat turi noto‘g‘ri yoki sizga tegishli emas.',

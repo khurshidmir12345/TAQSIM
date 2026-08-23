@@ -1,0 +1,17 @@
+<?php
+
+/*
+ * Muddat haqidagi ogohlantirishlar — FAQAT Telegram bot orqali yuboriladi.
+ *
+ * Bu matnlar ataylab serverda turadi: ilova ichida narx, to'lov yoki tarif
+ * haqida bir og'iz so'z bo'lmasligi kerak (do'kon qoidalari). Ilovadan
+ * tashqarida — botda, SMS'da, qo'ng'iroqda — bularni aytish mumkin.
+ */
+
+return [
+    'notice' => [
+        'ending' => "Ассалому алайкум!\n\nTaqseem'да тўлиқ фойдаланиш муддатингиз :days кундан кейин тугайди.\n\nШундан сўнг Статистика, Буюртмалар ва Ходимлар бўлимлари ёпилади. Бош саҳифа, маҳсулот ва рецептлар, ишлаб чиқариш, қайтариш ва касса — бепул ишлашда давом этади.\n\nБарча имкониятлардан тўлиқ фойдаланишни давом эттириш учун премиум тарифни расмийлаштиринг — админ билан боғланинг: :contact",
+        'ended' => "Ассалому алайкум!\n\nTaqseem'да тўлиқ фойдаланиш муддатингиз тугади. Статистика, Буюртмалар ва Ходимлар бўлимлари ёпилди.\n\nБош саҳифа, маҳсулот ва рецептлар, ишлаб чиқариш, қайтариш ва касса аввалгидек бепул ишлайди.\n\nЁпилган бўлимларни қайта очиш учун премиум тарифни расмийлаштиринг — админ билан боғланинг: :contact",
+    ],
+
+];

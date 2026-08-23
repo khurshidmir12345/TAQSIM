@@ -19,6 +19,7 @@ return [
         'forbidden_shop_bakery' => 'Бул нон жайына кирүүгө уруксат жок.',
         'forbidden_owner_only' => 'Бул аракетти ээ гана аткара алат.',
         'forbidden_permission' => 'Бул бөлүмгө уруксатыңыз жок.',
+        'feature_unavailable' => 'Бул бөлүм аккаунтуңузда күйгүзүлгөн эмес.',
         'rate_limit' => 'Өтө көп суроо. Күтүңүз.',
         'server_error' => 'Сервер катасы.',
         'invalid_expense_category' => 'Чыгым түрү туура эмес же сизге таандык эмес.',

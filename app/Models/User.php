@@ -39,6 +39,8 @@ class User extends Authenticatable implements FilamentUser
         'notification_prefs',
         'must_set_password_at',
         'blocked_at',
+        'access_until',
+        'access_source',
         'email_verified_at',
         'phone_verified_at',
     ];
@@ -59,7 +61,70 @@ class User extends Authenticatable implements FilamentUser
             'is_accepted_policy' => 'boolean',
             'notification_prefs' => 'array',
             'must_set_password_at' => 'datetime',
+            'access_until' => 'datetime',
         ];
+    }
+
+    /**
+     * Yangi foydalanuvchiga sinov muddatini beradi.
+     *
+     * Bitta joyda: ro'yxatdan o'tish, SMS kod bilan kirish, Google, Apple,
+     * Telegram va xodim taklifi — hammasi `User::create()` orqali o'tadi.
+     * Qiymat oldindan berilgan bo'lsa (testlar, seeder) tegilmaydi.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $user): void {
+            if ($user->access_until === null) {
+                $user->access_until = now()->addDays((int) config('access.trial_days', 30));
+                $user->access_source ??= 'trial';
+            }
+        });
+    }
+
+    /**
+     * Pullik bo'limlar shu foydalanuvchi uchun ochiqmi.
+     *
+     * Cheklov `.env` dan o'chirilgan bo'lsa hamma narsa ochiq — bu deploysiz
+     * to'xtatish tugmasi (`config/access.php`).
+     */
+    public function hasFullAccess(): bool
+    {
+        if (! config('access.enabled')) {
+            return true;
+        }
+
+        return $this->access_until !== null && $this->access_until->isFuture();
+    }
+
+    /**
+     * Hisob holati: 'trial' | 'paid' | 'expired'.
+     *
+     * Faqat admin paneli va hisobot uchun. Ruxsat qarori `hasFullAccess()`
+     * orqali chiqariladi.
+     */
+    public function accessStatus(): string
+    {
+        if ($this->access_until === null || $this->access_until->isPast()) {
+            return 'expired';
+        }
+
+        return $this->access_source === 'paid' ? 'paid' : 'trial';
+    }
+
+    /** Muddat tugashiga necha kun qoldi (o'tib ketgan bo'lsa manfiy). */
+    public function accessDaysLeft(): ?int
+    {
+        if ($this->access_until === null) {
+            return null;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->access_until->startOfDay(), false);
+    }
+
+    public function accessNotices(): HasMany
+    {
+        return $this->hasMany(AccessNotice::class);
     }
 
     /**

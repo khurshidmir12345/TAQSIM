@@ -177,6 +177,37 @@ class UserResource extends Resource
                     ->trueColor('danger')
                     ->falseColor('gray')
                     ->state(fn (User $record): bool => $record->isBlocked()),
+                Tables\Columns\TextColumn::make('access_until')
+                    ->label('Kirish muddati')
+                    ->badge()
+                    ->dateTime('d.m.Y')
+                    ->placeholder('—')
+                    ->sortable()
+                    ->color(fn (User $record): string => match ($record->accessStatus()) {
+                        'paid' => 'success',
+                        'trial' => 'warning',
+                        default => 'danger',
+                    })
+                    ->formatStateUsing(function (User $record): string {
+                        $label = match ($record->accessStatus()) {
+                            'paid' => 'To\'langan',
+                            'trial' => 'Sinov',
+                            default => 'Tugagan',
+                        };
+
+                        $date = $record->access_until?->format('d.m.Y') ?? '—';
+
+                        return "{$label} · {$date}";
+                    })
+                    ->description(function (User $record): ?string {
+                        $days = $record->accessDaysLeft();
+
+                        if ($days === null || $days < 0) {
+                            return null;
+                        }
+
+                        return "{$days} kun qoldi";
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Ro\'yxatdan o\'tgan')
                     ->dateTime('d.m.Y H:i')
@@ -200,9 +231,86 @@ class UserResource extends Resource
                     ->label('Bloklangan')
                     ->query(fn (Builder $q) => $q->whereNotNull('blocked_at'))
                     ->toggle(),
+                Tables\Filters\SelectFilter::make('access_status')
+                    ->label('Kirish holati')
+                    ->options([
+                        'paid' => 'To\'langan',
+                        'trial' => 'Sinov muddatida',
+                        'expired' => 'Muddati tugagan',
+                    ])
+                    ->query(fn (Builder $q, array $data) => match ($data['value'] ?? null) {
+                        'paid' => $q->where('access_source', 'paid')->where('access_until', '>', now()),
+                        'trial' => $q->where('access_source', '!=', 'paid')->where('access_until', '>', now()),
+                        'expired' => $q->where(fn (Builder $sub) => $sub
+                            ->whereNull('access_until')
+                            ->orWhere('access_until', '<=', now())),
+                        default => $q,
+                    }),
+                Tables\Filters\Filter::make('access_ending_soon')
+                    ->label('Muddati 7 kun ichida tugaydi')
+                    ->query(fn (Builder $q) => $q
+                        ->whereBetween('access_until', [now(), now()->addDays(7)]))
+                    ->toggle(),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('grantMonth')
+                        ->label('1 oy berish')
+                        ->icon('heroicon-o-plus-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Kirish muddatini 1 oyga uzaytirish')
+                        ->modalDescription('Barcha bo\'limlar ochiladi. Muddat hozirgi sanadan yoki mavjud muddat oxiridan — qaysi biri kechroq bo\'lsa — hisoblanadi.')
+                        ->action(fn (User $record) => static::grantAccess($record, months: 1)),
+                    Tables\Actions\Action::make('grantYear')
+                        ->label('1 yil berish')
+                        ->icon('heroicon-o-plus-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Kirish muddatini 1 yilga uzaytirish')
+                        ->action(fn (User $record) => static::grantAccess($record, months: 12)),
+                    Tables\Actions\Action::make('grantCustom')
+                        ->label('Sana belgilash')
+                        ->icon('heroicon-o-calendar-days')
+                        ->color('success')
+                        ->form([
+                            Forms\Components\DatePicker::make('access_until')
+                                ->label('Shu sanagacha ochiq')
+                                ->required()
+                                ->native(false)
+                                ->minDate(now())
+                                ->default(fn (User $record) => $record->access_until ?? now()->addMonth()),
+                        ])
+                        ->action(function (User $record, array $data): void {
+                            $record->forceFill([
+                                'access_until' => \Illuminate\Support\Carbon::parse($data['access_until'])->endOfDay(),
+                                'access_source' => 'paid',
+                            ])->save();
+
+                            Notification::make()
+                                ->title('Muddat yangilandi: ' . $record->access_until->format('d.m.Y'))
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\Action::make('revokeAccess')
+                        ->label('Kirishni yopish')
+                        ->icon('heroicon-o-minus-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Pullik bo\'limlarni yopish')
+                        ->modalDescription('Statistika, buyurtmalar, xodimlar va ikkinchi biznes darhol yopiladi. Bepul bo\'limlar ochiq qoladi.')
+                        ->visible(fn (User $record): bool => $record->hasFullAccess())
+                        ->action(function (User $record): void {
+                            $record->forceFill(['access_until' => now()->subSecond()])->save();
+
+                            Notification::make()->title('Pullik bo\'limlar yopildi')->success()->send();
+                        }),
+                ])
+                    ->label('Kirish muddati')
+                    ->icon('heroicon-o-key')
+                    ->button()
+                    ->color('gray'),
                 Tables\Actions\Action::make('block')
                     ->label('Bloklash')
                     ->icon('heroicon-o-lock-closed')
@@ -262,5 +370,29 @@ class UserResource extends Resource
             'view' => Pages\ViewUser::route('/{record}'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Kirish muddatini uzaytiradi.
+     *
+     * Sanoq hozirgi vaqtdan yoki mavjud muddat oxiridan — qaysi biri kechroq
+     * bo'lsa — boshlanadi: muddati tugamagan odamga qo'shimcha oy berilsa,
+     * qolgan kunlari yo'qolib ketmasin.
+     */
+    private static function grantAccess(User $user, int $months): void
+    {
+        $from = $user->access_until !== null && $user->access_until->isFuture()
+            ? $user->access_until
+            : now();
+
+        $user->forceFill([
+            'access_until' => $from->copy()->addMonths($months),
+            'access_source' => 'paid',
+        ])->save();
+
+        Notification::make()
+            ->title('Ochiq: ' . $user->access_until->format('d.m.Y') . ' gacha')
+            ->success()
+            ->send();
     }
 }

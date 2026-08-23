@@ -19,6 +19,7 @@ return [
         'forbidden_shop_bakery' => 'Бұл наубайханға кіруге рұқсат жоқ.',
         'forbidden_owner_only' => 'Тек иесі ғана осы әрекетті орындай алады.',
         'forbidden_permission' => 'Бұл бөлімге рұқсатыңыз жоқ.',
+        'feature_unavailable' => 'Бұл бөлім аккаунтыңызда қосылмаған.',
         'rate_limit' => 'Тым көп сұрау. Біраз күтіңіз.',
         'server_error' => 'Сервер қатесі.',
         'invalid_expense_category' => 'Шығын түрі дұрыс емес немесе сізге тиесілі емес.',

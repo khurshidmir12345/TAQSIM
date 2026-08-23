@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Enums\ShopPermission;
 use App\Enums\ShopUserType;
+use App\Services\AccessService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,6 +36,9 @@ class ShopResource extends JsonResource
                 MeasurementUnitResource::collection($this->measurementUnits)),
             'user_type'        => $this->whenPivotLoaded('user_shops', fn () => $this->pivot->user_type),
             'permissions'      => $this->whenPivotLoaded('user_shops', fn () => $this->resolvePermissions()),
+            // Muddat bo'yicha ochiq bo'limlar. `permissions` roldan kelib
+            // chiqadi, bu esa hisob muddatidan — ikkalasi mustaqil.
+            'features'         => $this->whenPivotLoaded('user_shops', fn () => $this->resolveFeatures()),
             'created_at'       => $this->created_at,
         ];
     }
@@ -55,5 +59,18 @@ class ShopResource extends JsonResource
         }
 
         return $this->pivot->permissions ?? [];
+    }
+
+    /**
+     * Muddat bo'yicha ochiq bo'limlar (`config/access.php` dagi `paid_features`).
+     *
+     * Ro'yxat egasining muddatidan hisoblanadi — xodim ham xuddi shu ro'yxatni
+     * oladi. Ilova buni o'qib bo'limni ochadi yoki neytral xabar ko'rsatadi.
+     *
+     * @return list<string>
+     */
+    private function resolveFeatures(): array
+    {
+        return app(AccessService::class)->featuresFor($this->resource);
     }
 }

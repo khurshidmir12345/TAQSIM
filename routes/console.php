@@ -25,6 +25,13 @@ Schedule::command('notifications:order-reminder')
     ->timezone(config('app.business_timezone'))
     ->withoutOverlapping();
 
+// Muddat tugashi haqida Telegram orqali ogohlantirish (7 / 3 / 1 kun va
+// tugagan kun). Ilova ichida bu haqda gapirilmaydi — do'kon qoidalari.
+Schedule::command('access:notices')
+    ->dailyAt('10:00')
+    ->timezone(config('app.business_timezone'))
+    ->withoutOverlapping();
+
 Schedule::command('notifications:daily-greeting')
     ->dailyAt('07:00')
     ->timezone(config('app.business_timezone'))

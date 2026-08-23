@@ -19,6 +19,7 @@ return [
         'forbidden_shop_bakery' => 'Бу новвойхонага киришга рухсат йўқ.',
         'forbidden_owner_only' => 'Фақат эгаси бу амални бажара олади.',
         'forbidden_permission' => 'Бу бўлим учун рухсатингиз йўқ.',
+        'feature_unavailable' => 'Бу бўлим ҳисобингизда ёқилмаган.',
         'rate_limit' => 'Жуда кўп сўров. Бироз кутинг.',
         'server_error' => 'Серверда хатолик юз берди.',
         'invalid_expense_category' => 'Харажат тури нотўғри ёки сизга тегишли эмас.',

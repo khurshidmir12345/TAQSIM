@@ -1,0 +1,17 @@
+<?php
+
+/*
+ * Muddat haqidagi ogohlantirishlar — FAQAT Telegram bot orqali yuboriladi.
+ *
+ * Bu matnlar ataylab serverda turadi: ilova ichida narx, to'lov yoki tarif
+ * haqida bir og'iz so'z bo'lmasligi kerak (do'kon qoidalari). Ilovadan
+ * tashqarida — botda, SMS'da, qo'ng'iroqda — bularni aytish mumkin.
+ */
+
+return [
+    'notice' => [
+        'ending' => "Сәлеметсіз бе!\n\nTaqseem-дегі толық қолжетімділік мерзіміңіз :days күннен кейін аяқталады.\n\nОдан кейін Статистика, Тапсырыстар және Қызметкерлер бөлімдері жабылады. Басты бет, өнімдер мен рецептер, өндіріс, қайтару және касса тегін жұмысын жалғастырады.\n\nБарлық мүмкіндіктерді пайдалануды жалғастыру үшін премиум тарифті рәсімдеңіз — әкімшімен байланысыңыз: :contact",
+        'ended' => "Сәлеметсіз бе!\n\nTaqseem-дегі толық қолжетімділік мерзіміңіз аяқталды. Статистика, Тапсырыстар және Қызметкерлер бөлімдері жабылды.\n\nБасты бет, өнімдер мен рецептер, өндіріс, қайтару және касса бұрынғыдай тегін жұмыс істейді.\n\nЖабылған бөлімдерді қайта ашу үшін премиум тарифті рәсімдеңіз — әкімшімен байланысыңыз: :contact",
+    ],
+
+];

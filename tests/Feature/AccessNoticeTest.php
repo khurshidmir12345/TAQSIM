@@ -29,7 +29,7 @@ class AccessNoticeTest extends TestCase
         parent::setUp();
 
         config()->set('access.enabled', true);
-        config()->set('access.notice_days', [7, 3, 1, 0]);
+        config()->set('access.notice_days', [7, 3, 1, 0, -1]);
 
         SystemBot::create([
             'name' => 'Register bot',
@@ -163,6 +163,60 @@ class AccessNoticeTest extends TestCase
         SendAccessNotices::dispatchSync();
 
         $this->assertSame(0, AccessNotice::query()->count());
+    }
+
+    /**
+     * Uchta bosqichning matni bir-biridan farq qiladi.
+     *
+     * Tugash kuni "bugun tugaydi" deyilishi muhim: job soat 10:00 da
+     * ishlaydi, muddat esa o'sha kuni kechroq tugashi mumkin — o'shanda
+     * "yopildi" deyish noto'g'ri bo'lardi, chunki bo'limlar hali ochiq.
+     */
+    public function test_each_stage_has_its_own_wording(): void
+    {
+        $cases = [
+            [7, 'kundan keyin tugaydi'],
+            [0, 'bugun tugaydi'],
+            [-1, 'muddatingiz tugadi'],
+        ];
+
+        foreach ($cases as $i => [$days, $needle]) {
+            // Har bosqichga alohida foydalanuvchi: yozuvlarni tozalash
+            // shart emas, unique kalit takror yuborishni allaqachon
+            // to'xtatadi.
+            $this->makeOwner($days, chatId: 556000 + $i);
+
+            $captured = null;
+            $mock = Mockery::mock(TelegramBotService::class);
+            $mock->shouldReceive('sendMessage')
+                ->once()
+                ->andReturnUsing(function (string $token, int $chatId, string $text) use (&$captured) {
+                    $captured = $text;
+
+                    return true;
+                });
+            $this->app->instance(TelegramBotService::class, $mock);
+
+            SendAccessNotices::dispatchSync();
+
+            $this->assertNotNull($captured, "days={$days} uchun xabar yuborilmadi");
+            $this->assertStringContainsString(
+                $needle,
+                $captured,
+                "days={$days} xabarida \"{$needle}\" bo'lishi kerak edi",
+            );
+        }
+    }
+
+    /** Muddat tugagandan keyingi kun ham ogohlantiriladi. */
+    public function test_the_day_after_expiry_is_covered(): void
+    {
+        $this->makeOwner(-1);
+        $this->expectSends(1);
+
+        SendAccessNotices::dispatchSync();
+
+        $this->assertDatabaseHas('access_notices', ['days_before' => -1]);
     }
 
     /** Xabar matni serverda — narx haqida gapirish shu yerda mumkin. */

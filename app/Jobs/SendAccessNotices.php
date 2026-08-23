@@ -69,6 +69,8 @@ class SendAccessNotices implements ShouldQueue
 
     /**
      * Muddati aynan shuncha kundan keyin tugaydiganlarga xabar yuboradi.
+     *
+     * Manfiy qiymat o'tgan kunni bildiradi: `-1` — kechagi kuni tugaganlar.
      */
     private function sendForDay(TelegramBotService $telegram, string $token, int $daysBefore): int
     {
@@ -107,7 +109,11 @@ class SendAccessNotices implements ShouldQueue
             return false; // Allaqachon yuborilgan.
         }
 
-        $key = $daysBefore === 0 ? 'access.notice.ended' : 'access.notice.ending';
+        $key = match (true) {
+            $daysBefore > 0 => 'access.notice.ending',
+            $daysBefore === 0 => 'access.notice.ending_today',
+            default => 'access.notice.ended',
+        };
 
         $text = __($key, [
             'days' => (string) $daysBefore,

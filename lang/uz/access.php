@@ -11,6 +11,7 @@
 return [
     'notice' => [
         'ending' => "Assalomu alaykum!\n\nTaqseem'da to'liq foydalanish muddatingiz :days kundan keyin tugaydi.\n\nShundan so'ng Statistika, Buyurtmalar va Xodimlar bo'limlari yopiladi. Bosh sahifa, mahsulot va retseptlar, ishlab chiqarish, qaytarish va kassa — bepul ishlashda davom etadi.\n\nBarcha imkoniyatlardan to'liq foydalanishni davom ettirish uchun premium tarifni rasmiylashtiring — admin bilan bog'laning: :contact",
+        'ending_today' => "Assalomu alaykum!\n\nTaqseem'da to'liq foydalanish muddatingiz bugun tugaydi.\n\nErtadan Statistika, Buyurtmalar va Xodimlar bo'limlari yopiladi. Bosh sahifa, mahsulot va retseptlar, ishlab chiqarish, qaytarish va kassa — bepul ishlashda davom etadi.\n\nBarcha imkoniyatlardan to'liq foydalanishni davom ettirish uchun premium tarifni rasmiylashtiring — admin bilan bog'laning: :contact",
         'ended' => "Assalomu alaykum!\n\nTaqseem'da to'liq foydalanish muddatingiz tugadi. Statistika, Buyurtmalar va Xodimlar bo'limlari yopildi.\n\nBosh sahifa, mahsulot va retseptlar, ishlab chiqarish, qaytarish va kassa avvalgidek bepul ishlaydi.\n\nYopilgan bo'limlarni qayta ochish uchun premium tarifni rasmiylashtiring — admin bilan bog'laning: :contact",
     ],
 

@@ -57,15 +57,18 @@ return [
     |--------------------------------------------------------------------------
     |
     | Muddat tugashiga shuncha kun qolganda bot orqali xabar yuboriladi.
-    | `0` — tugagan kunning o'zi. Har bir nuqta bir marta yuboriladi
-    | (`access_notices` jadvali orqali).
+    | `0` — tugash kunining o'zi ("bugun tugaydi"), manfiy qiymat esa
+    | tugagandan keyingi kun ("tugadi, bo'limlar yopildi"). Aynan o'sha kuni
+    | foydalanuvchi yopilganini sezadi — xabar shunda eng foydali.
+    |
+    | Har bir nuqta bir marta yuboriladi (`access_notices` jadvali orqali).
     |
     | Xabar matni faqat serverda, `lang` katalogidagi `access` faylida —
     | mobil ilova binary'siga tushmaydi.
     |
     */
 
-    'notice_days' => [7, 3, 1, 0],
+    'notice_days' => [7, 3, 1, 0, -1],
 
     /*
     |--------------------------------------------------------------------------

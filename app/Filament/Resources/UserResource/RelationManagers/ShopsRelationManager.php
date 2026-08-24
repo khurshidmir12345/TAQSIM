@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\UserResource\RelationManagers;
 
+use App\Enums\ShopUserType;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -24,8 +25,10 @@ class ShopsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('pivot.user_type')
                     ->label('Roli')
                     ->badge()
-                    ->color(fn (string $state): string => $state === 'owner' ? 'success' : 'info')
-                    ->formatStateUsing(fn (string $state): string => $state === 'owner' ? 'Egasi' : 'Sotuvchi'),
+                    // Pivot ustuni enum bo'lib keladi — `string` deb e'lon
+                    // qilinganda TypeError berardi va sahifa umuman ochilmasdi.
+                    ->color(fn (mixed $state): string => ShopUserType::resolve($state)?->badgeColor() ?? 'gray')
+                    ->formatStateUsing(fn (mixed $state): string => ShopUserType::resolve($state)?->label() ?? '—'),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Telefon')
                     ->placeholder('—'),

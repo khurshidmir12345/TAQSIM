@@ -110,7 +110,14 @@ class UserResource extends Resource
                     Infolists\Components\TextEntry::make('name')->label('Ism')->placeholder('—'),
                     Infolists\Components\TextEntry::make('phone')->label('Telefon')->placeholder('—')->copyable(),
                     Infolists\Components\TextEntry::make('email')->label('Email')->placeholder('—')->copyable(),
-                    Infolists\Components\TextEntry::make('telegram_username')->label('Telegram')->prefix('@')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('telegram_username')
+                        ->label('Telegram')
+                        ->placeholder('ulanmagan')
+                        ->formatStateUsing(fn (?string $state): string => $state === null ? '—' : '@' . $state),
+                    Infolists\Components\TextEntry::make('telegram_chat_id')
+                        ->label('Telegram ID')
+                        ->placeholder('—')
+                        ->copyable(),
                     Infolists\Components\TextEntry::make('locale')->label('Til')->placeholder('—'),
                 ]),
             Infolists\Components\Section::make('Holat')
@@ -151,10 +158,19 @@ class UserResource extends Resource
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('telegram_username')
                     ->label('Telegram')
-                    ->prefix('@')
-                    ->searchable()
-                    ->placeholder('—')
-                    ->toggleable(),
+                    ->searchable(['telegram_username', 'telegram_chat_id'])
+                    ->placeholder('ulanmagan')
+                    ->toggleable()
+                    ->formatStateUsing(fn (?string $state): string => $state === null ? '—' : '@' . $state)
+                    // chat_id ni ko'rsatamiz: "bu Telegram kimga bog'langan?"
+                    // savoliga javob shu raqam orqali topiladi.
+                    ->description(fn (User $record): ?string => $record->telegram_chat_id === null
+                        ? null
+                        : 'ID: ' . $record->telegram_chat_id)
+                    ->copyable()
+                    ->copyableState(fn (User $record): ?string => $record->telegram_chat_id === null
+                        ? null
+                        : (string) $record->telegram_chat_id),
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
                     ->searchable()
@@ -290,6 +306,26 @@ class UserResource extends Resource
                             ->title('Premium ochildi: ' . $record->access_until->format('d.m.Y') . ' gacha')
                             ->success()
                             ->send();
+                    }),
+                Tables\Actions\Action::make('unlinkTelegram')
+                    ->label('Telegramni uzish')
+                    ->icon('heroicon-o-link-slash')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Telegram hisobini uzish')
+                    ->modalDescription(fn (User $record): string => 'Ushbu foydalanuvchidan @'
+                        . ($record->telegram_username ?? $record->telegram_chat_id)
+                        . ' uziladi. Shundan so\'ng u bot orqali xabar olmaydi, lekin bu Telegram '
+                        . 'hisobini boshqa foydalanuvchiga ulash mumkin bo\'ladi.')
+                    ->modalSubmitActionLabel('Uzish')
+                    ->visible(fn (User $record): bool => $record->telegram_chat_id !== null)
+                    ->action(function (User $record): void {
+                        $record->forceFill([
+                            'telegram_chat_id' => null,
+                            'telegram_username' => null,
+                        ])->save();
+
+                        Notification::make()->title('Telegram uzildi')->success()->send();
                     }),
                 Tables\Actions\Action::make('revokeAccess')
                     ->label('Yopish')

@@ -136,6 +136,62 @@ class AccessAdminActionTest extends TestCase
         );
     }
 
+    /**
+     * Telegram hisobini uzish.
+     *
+     * Kerak bo'ladigan holat: bitta Telegram hisobi bir vaqtda faqat bitta
+     * foydalanuvchida turadi. Odam eski akkountini tashlab yangisiga o'tsa,
+     * eskisidan uzmaguncha yangisiga ulay olmaydi.
+     */
+    public function test_unlinking_telegram_frees_the_account(): void
+    {
+        $this->actingAsAdmin();
+
+        $user = User::factory()->create([
+            'telegram_chat_id' => 5557554848,
+            'telegram_username' => 'khurshid_mirzajonov',
+        ]);
+
+        Livewire::test(ListUsers::class)
+            ->callTableAction('unlinkTelegram', $user)
+            ->assertHasNoTableActionErrors();
+
+        $user->refresh();
+
+        $this->assertNull($user->telegram_chat_id);
+        $this->assertNull($user->telegram_username);
+    }
+
+    /** Ulanmagan foydalanuvchida tugma ko'rinmasligi kerak. */
+    public function test_unlink_action_is_hidden_without_telegram(): void
+    {
+        $this->actingAsAdmin();
+
+        $linked = User::factory()->create(['telegram_chat_id' => 111222333]);
+        $notLinked = User::factory()->create(['telegram_chat_id' => null]);
+
+        Livewire::test(ListUsers::class)
+            ->assertTableActionVisible('unlinkTelegram', $linked)
+            ->assertTableActionHidden('unlinkTelegram', $notLinked);
+    }
+
+    /** Telegram ID bo'yicha qidirish: "bu hisob kimga bog'langan?" */
+    public function test_users_can_be_found_by_telegram_chat_id(): void
+    {
+        $this->actingAsAdmin();
+
+        $target = User::factory()->create([
+            'name' => 'Eski akkount',
+            'telegram_chat_id' => 5557554848,
+        ]);
+        $other = User::factory()->create(['name' => 'Boshqa odam']);
+
+        Livewire::test(ListUsers::class)
+            ->searchTable('5557554848')
+            ->assertCanSeeTableRecords([$target])
+            ->assertCanNotSeeTableRecords([$other]);
+    }
+
     public function test_revoking_closes_the_paid_sections_immediately(): void
     {
         $this->actingAsAdmin();

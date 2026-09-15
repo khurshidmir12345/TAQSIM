@@ -15,6 +15,7 @@ return [
     ],
 
     'auto_categories' => [
+        'outlet_credit' => 'Дүкенге қарызға',
         'outlet_payment' => 'Дүкеннен түсім',
         'production_income' => 'Өнім түсімі',
         'production_cost' => 'Шикізат',

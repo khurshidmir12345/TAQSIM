@@ -15,6 +15,7 @@ return [
     ],
 
     'auto_categories' => [
+        'outlet_credit' => 'Do‘konga nasiya',
         'outlet_payment' => 'Do‘kondan tushum',
         'production_income' => 'Mahsulot tushumi',
         'production_cost' => 'Xom ashyo',

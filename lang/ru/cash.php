@@ -15,6 +15,7 @@ return [
     ],
 
     'auto_categories' => [
+        'outlet_credit' => 'В долг магазину',
         'outlet_payment' => 'Оплата от магазина',
         'production_income' => 'Выручка от продукции',
         'production_cost' => 'Сырьё',

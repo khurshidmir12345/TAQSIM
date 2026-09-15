@@ -18,8 +18,11 @@ enum CashTransactionSource: string
 
     case BreadReturn = 'return';
 
-    /** Do'kon to'lovi (do'konlar bo'limi). */
+    /** Do'kon to'lovi (do'konlar bo'limi) — kirim. */
     case OutletPayment = 'outlet';
+
+    /** Do'konga nasiya berilgan mahsulot puli — chiqim. */
+    case OutletCredit = 'outlet_credit';
 
     /** Foydalanuvchi tahrirlashi/o'chirishi mumkinmi. */
     public function isEditable(): bool

@@ -6,6 +6,7 @@ use App\Enums\CashTransactionSource;
 use App\Enums\CashTransactionType;
 use App\Models\BreadReturn;
 use App\Models\CashTransaction;
+use App\Enums\OutletEntryType;
 use App\Models\OutletEntry;
 use App\Models\Production;
 use App\Models\Shop;
@@ -30,6 +31,8 @@ class CashMirrorService
     public const CATEGORY_RETURN = 'return';
 
     public const CATEGORY_OUTLET_PAYMENT = 'outlet_payment';
+
+    public const CATEGORY_OUTLET_CREDIT = 'outlet_credit';
 
     public function syncProduction(Production $production): void
     {
@@ -121,6 +124,46 @@ class CashMirrorService
         );
     }
 
+    /**
+     * Mahsulot nasiyaga berildi → kassaga chiqim (berildi − shu zahoti to'langan).
+     * Pul hali kelmagani uchun kassadan "chiqib turadi"; do'kon to'laganda
+     * alohida kirim bo'lib qaytadi.
+     */
+    public function syncOutletDelivery(OutletEntry $entry): void
+    {
+        $shop = $entry->shop;
+
+        if (! $shop instanceof Shop || ! $shop->cash_track_outlet_payments) {
+            $this->forget(CashTransactionSource::OutletCredit, $entry->id);
+
+            return;
+        }
+
+        $entry->loadMissing('outlet');
+
+        $paidNow = (float) OutletEntry::query()
+            ->where('related_entry_id', $entry->id)
+            ->where('type', 'payment')
+            ->sum('amount');
+
+        $this->put(
+            $shop,
+            CashTransactionType::Expense,
+            CashTransactionSource::OutletCredit,
+            $entry->id,
+            self::CATEGORY_OUTLET_CREDIT,
+            (float) $entry->amount - $paidNow,
+            $entry->date,
+            $entry->created_by,
+            $entry->outlet?->name,
+        );
+    }
+
+    public function forgetOutletDelivery(OutletEntry $entry): void
+    {
+        $this->forget(CashTransactionSource::OutletCredit, $entry->id);
+    }
+
     public function forgetOutletPayment(OutletEntry $entry): void
     {
         $this->forget(CashTransactionSource::OutletPayment, $entry->id);
@@ -165,11 +208,14 @@ class CashMirrorService
         }
 
         $this->forgetAll($shop, CashTransactionSource::OutletPayment);
+        $this->forgetAll($shop, CashTransactionSource::OutletCredit);
         if ($shop->cash_track_outlet_payments) {
-            $shop->outletEntries()->where('type', 'payment')->with('outlet')
+            $shop->outletEntries()->whereIn('type', ['payment', 'delivery'])->with('outlet')
                 ->chunkById(200, function ($entries): void {
                     foreach ($entries as $entry) {
-                        $this->syncOutletPayment($entry);
+                        $entry->type === OutletEntryType::Payment
+                            ? $this->syncOutletPayment($entry)
+                            : $this->syncOutletDelivery($entry);
                     }
                 });
         }

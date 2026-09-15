@@ -166,6 +166,39 @@ class OutletTest extends TestCase
         $this->assertSame(2, CashTransaction::query()->where('source', 'outlet')->count());
     }
 
+    public function test_credit_delivery_mirrors_to_cash_as_expense(): void
+    {
+        $id = $this->createOutlet('Chorsu');
+        $entries = $this->base() . "/{$id}/entries";
+
+        // 40 000 berildi, 15 000 naqd → kassaga 25 000 chiqim + 15 000 kirim.
+        $deliveryId = $this->actingAs($this->user)->postJson($entries, [
+            'type' => 'delivery', 'date' => '2026-09-10',
+            'items' => [['bread_category_id' => $this->non->id, 'quantity' => 10]],
+            'paid_amount' => 15000,
+        ])->assertCreated()->json('data.entry.id');
+
+        $credit = CashTransaction::query()->where('source', 'outlet_credit')->first();
+        $this->assertNotNull($credit);
+        $this->assertSame('expense', $credit->type->value);
+        $this->assertSame(25000.0, (float) $credit->amount);
+        $this->assertSame('Chorsu', $credit->description);
+        $this->assertSame(15000.0, (float) CashTransaction::query()->where('source', 'outlet')->sum('amount'));
+
+        // To'liq naqd berilsa chiqim yozilmaydi.
+        $this->actingAs($this->user)->postJson($entries, [
+            'type' => 'delivery', 'date' => '2026-09-11',
+            'items' => [['bread_category_id' => $this->non->id, 'quantity' => 1]],
+            'paid_amount' => 4000,
+        ])->assertCreated();
+        $this->assertSame(1, CashTransaction::query()->where('source', 'outlet_credit')->count());
+
+        // Delivery o'chirilsa chiqim ham, naqd kirim ham ketadi.
+        $this->actingAs($this->user)->deleteJson($entries . "/{$deliveryId}")->assertOk();
+        $this->assertSame(0, CashTransaction::query()->where('source', 'outlet_credit')->count());
+        $this->assertSame(4000.0, (float) CashTransaction::query()->where('source', 'outlet')->sum('amount'));
+    }
+
     public function test_daily_report_subtracts_credit_and_adds_payments(): void
     {
         $id = $this->createOutlet();

@@ -130,6 +130,10 @@ class OutletService
                 $this->mirror->syncOutletPayment($payment);
             }
 
+            if ($type === OutletEntryType::Delivery) {
+                $this->mirror->syncOutletDelivery($entry);
+            }
+
             return $entry;
         });
     }
@@ -144,6 +148,7 @@ class OutletService
                 $row->delete();
             }
             $this->mirror->forgetOutletPayment($entry);
+            $this->mirror->forgetOutletDelivery($entry);
             $entry->delete();
         });
     }

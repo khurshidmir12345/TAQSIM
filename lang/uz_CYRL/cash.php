@@ -15,6 +15,7 @@ return [
     ],
 
     'auto_categories' => [
+        'outlet_payment' => 'Дўкондан тушум',
         'production_income' => 'Маҳсулот тушуми',
         'production_cost' => 'Хом ашё',
         'return' => 'Возврат',

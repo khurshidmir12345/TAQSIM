@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\V1\IngredientController;
 use App\Http\Controllers\Api\V1\MeasurementUnitController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OnboardingController;
+use App\Http\Controllers\Api\V1\OutletController;
+use App\Http\Controllers\Api\V1\OutletEntryController;
 use App\Http\Controllers\Api\V1\ProductionController;
 use App\Http\Controllers\Api\V1\RecipeController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -177,6 +179,20 @@ Route::prefix('v1')->group(function () {
                 Route::post('{customer_order}/payments', [CustomerOrderController::class, 'storePayment']);
                 Route::post('{customer_order}/deliver', [CustomerOrderController::class, 'deliver']);
                 Route::post('{customer_order}/cancel', [CustomerOrderController::class, 'cancel']);
+            });
+
+            // ── Do'konlar (tarqatish nuqtalari) va ular bilan hisob-kitob ──
+            Route::middleware('shop.perm:manage_sales')->group(function () {
+                Route::get('outlets', [OutletController::class, 'index']);
+                Route::post('outlets', [OutletController::class, 'store']);
+                Route::get('outlets/{outlet}', [OutletController::class, 'show']);
+                Route::put('outlets/{outlet}', [OutletController::class, 'update']);
+                Route::delete('outlets/{outlet}', [OutletController::class, 'destroy']);
+                Route::post('outlets/{outlet}/image', [OutletController::class, 'uploadImage']);
+                Route::delete('outlets/{outlet}/image', [OutletController::class, 'deleteImage']);
+                Route::get('outlets/{outlet}/entries', [OutletEntryController::class, 'index']);
+                Route::post('outlets/{outlet}/entries', [OutletEntryController::class, 'store']);
+                Route::delete('outlets/{outlet}/entries/{entry}', [OutletEntryController::class, 'destroy']);
             });
 
             Route::middleware('shop.perm:view_reports,read')->group(function () {

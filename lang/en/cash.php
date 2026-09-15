@@ -15,6 +15,7 @@ return [
     ],
 
     'auto_categories' => [
+        'outlet_payment' => 'Payment from outlet',
         'production_income' => 'Product revenue',
         'production_cost' => 'Ingredients',
         'return' => 'Returns',

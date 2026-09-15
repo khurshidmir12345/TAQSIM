@@ -18,6 +18,9 @@ enum CashTransactionSource: string
 
     case BreadReturn = 'return';
 
+    /** Do'kon to'lovi (do'konlar bo'limi). */
+    case OutletPayment = 'outlet';
+
     /** Foydalanuvchi tahrirlashi/o'chirishi mumkinmi. */
     public function isEditable(): bool
     {

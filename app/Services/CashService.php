@@ -190,6 +190,7 @@ class CashService
         $shop->update(array_filter([
             'cash_track_production' => $settings['track_production'] ?? null,
             'cash_track_returns' => $settings['track_returns'] ?? null,
+            'cash_track_outlet_payments' => $settings['track_outlet_payments'] ?? null,
         ], static fn ($v) => $v !== null));
 
         $mirror->resyncShop($shop->refresh());
@@ -203,6 +204,7 @@ class CashService
         return [
             'track_production' => (bool) $shop->cash_track_production,
             'track_returns' => (bool) $shop->cash_track_returns,
+            'track_outlet_payments' => (bool) $shop->cash_track_outlet_payments,
         ];
     }
 

@@ -154,6 +154,7 @@ class CashController extends BaseShopController
         $validated = $request->validate([
             'track_production' => ['sometimes', 'boolean'],
             'track_returns' => ['sometimes', 'boolean'],
+            'track_outlet_payments' => ['sometimes', 'boolean'],
         ]);
 
         return $this->success([

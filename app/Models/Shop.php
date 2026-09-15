@@ -31,6 +31,7 @@ class Shop extends Model
         'is_active',
         'cash_track_production',
         'cash_track_returns',
+        'cash_track_outlet_payments',
     ];
 
     protected function casts(): array
@@ -39,6 +40,7 @@ class Shop extends Model
             'is_active' => 'boolean',
             'cash_track_production' => 'boolean',
             'cash_track_returns' => 'boolean',
+            'cash_track_outlet_payments' => 'boolean',
             'latitude'  => 'float',
             'longitude' => 'float',
         ];
@@ -137,5 +139,15 @@ class Shop extends Model
     public function customerOrders(): HasMany
     {
         return $this->hasMany(CustomerOrder::class);
+    }
+
+    public function outlets(): HasMany
+    {
+        return $this->hasMany(Outlet::class);
+    }
+
+    public function outletEntries(): HasMany
+    {
+        return $this->hasMany(OutletEntry::class);
     }
 }

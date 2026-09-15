@@ -15,6 +15,7 @@ return [
     ],
 
     'auto_categories' => [
+        'outlet_payment' => 'Дүкөндөн түшүм',
         'production_income' => 'Продукция түшүмү',
         'production_cost' => 'Чийки зат',
         'return' => 'Кайтарым',

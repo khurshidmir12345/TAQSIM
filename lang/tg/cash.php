@@ -15,6 +15,7 @@ return [
     ],
 
     'auto_categories' => [
+        'outlet_payment' => 'Пардохт аз мағоза',
         'production_income' => 'Даромади маҳсулот',
         'production_cost' => 'Ашёи хом',
         'return' => 'Баргардонӣ',

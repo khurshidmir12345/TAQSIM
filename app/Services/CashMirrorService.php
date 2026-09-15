@@ -6,6 +6,7 @@ use App\Enums\CashTransactionSource;
 use App\Enums\CashTransactionType;
 use App\Models\BreadReturn;
 use App\Models\CashTransaction;
+use App\Models\OutletEntry;
 use App\Models\Production;
 use App\Models\Shop;
 
@@ -27,6 +28,8 @@ class CashMirrorService
     public const CATEGORY_PRODUCTION_COST = 'production_cost';
 
     public const CATEGORY_RETURN = 'return';
+
+    public const CATEGORY_OUTLET_PAYMENT = 'outlet_payment';
 
     public function syncProduction(Production $production): void
     {
@@ -89,6 +92,40 @@ class CashMirrorService
         );
     }
 
+    /**
+     * Do'kon to'lovi → kassaga kirim (do'kon sozlamasi yoqiq bo'lsa).
+     * Izohda do'kon nomi turadi — ro'yxatda "qaysi do'kondan" ko'rinadi.
+     */
+    public function syncOutletPayment(OutletEntry $entry): void
+    {
+        $shop = $entry->shop;
+
+        if (! $shop instanceof Shop || ! $shop->cash_track_outlet_payments) {
+            $this->forget(CashTransactionSource::OutletPayment, $entry->id);
+
+            return;
+        }
+
+        $entry->loadMissing('outlet');
+
+        $this->put(
+            $shop,
+            CashTransactionType::Income,
+            CashTransactionSource::OutletPayment,
+            $entry->id,
+            self::CATEGORY_OUTLET_PAYMENT,
+            (float) $entry->amount,
+            $entry->date,
+            $entry->created_by,
+            $entry->outlet?->name,
+        );
+    }
+
+    public function forgetOutletPayment(OutletEntry $entry): void
+    {
+        $this->forget(CashTransactionSource::OutletPayment, $entry->id);
+    }
+
     public function forgetProduction(Production $production): void
     {
         $this->forget(CashTransactionSource::Production, $production->id);
@@ -126,6 +163,16 @@ class CashMirrorService
         } else {
             $this->forgetAll($shop, CashTransactionSource::BreadReturn);
         }
+
+        $this->forgetAll($shop, CashTransactionSource::OutletPayment);
+        if ($shop->cash_track_outlet_payments) {
+            $shop->outletEntries()->where('type', 'payment')->with('outlet')
+                ->chunkById(200, function ($entries): void {
+                    foreach ($entries as $entry) {
+                        $this->syncOutletPayment($entry);
+                    }
+                });
+        }
     }
 
     /**
@@ -143,6 +190,7 @@ class CashMirrorService
         float $amount,
         mixed $date,
         ?string $createdBy,
+        ?string $description = null,
     ): void {
         $query = CashTransaction::query()
             ->where('source', $source->value)
@@ -166,6 +214,7 @@ class CashMirrorService
             'amount' => round($amount, 2),
             'date' => $date,
             'created_by' => $createdBy,
+            'description' => $description,
         ];
 
         $existing ? $existing->update($attributes) : CashTransaction::create($attributes);

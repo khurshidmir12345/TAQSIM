@@ -15,6 +15,7 @@ return [
     ],
 
     'auto_categories' => [
+        'outlet_payment' => 'Bayiden tahsilat',
         'production_income' => 'Ürün geliri',
         'production_cost' => 'Hammadde',
         'return' => 'İade',

@@ -7,6 +7,14 @@ use Carbon\Carbon;
 
 class ReportService
 {
+    /** Unit testlar servisni bo'sh konstruktor bilan quradi — shunda konteynerdan olinadi. */
+    public function __construct(private ?OutletService $outlets = null) {}
+
+    private function outletService(): OutletService
+    {
+        return $this->outlets ??= app(OutletService::class);
+    }
+
     /**
      * Bitta kun uchun to'liq hisobot.
      */
@@ -99,6 +107,12 @@ class ReportService
         // ko'rsatgandek ko'rinardi.
         $profit = $netSales - $ingredientCost;
 
+        // Do'konlarga nasiya berilgan mahsulot puli hali kelmagan — foydadan
+        // ayriladi; do'kon to'lagan kuni esa qo'shiladi. Naqd berilgan mahsulot
+        // (berildi = to'landi) foydani o'zgartirmaydi.
+        $outletTotals = $this->outletService()->periodTotals($shop, $from, $to);
+        $profit -= $outletTotals['credit'];
+
         $expensesByCategory = $expenses->groupBy('category')
             ->map(fn ($group) => (float) $group->sum('amount'))
             ->toArray();
@@ -139,7 +153,8 @@ class ReportService
                 'total' => $totalExpenses,
                 'by_category' => $expensesByCategory,
             ],
-            'profit' => $profit,
+            'profit' => round($profit, 2),
+            'outlets' => $outletTotals,
             'returns_by_category' => $returnsByCategory,
             'product_breakdown' => $productBreakdown,
         ];

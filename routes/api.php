@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\ProductionController;
 use App\Http\Controllers\Api\V1\RecipeController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\ReturnController;
+use App\Http\Controllers\Api\V1\ShopBatchUnitController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Controllers\Api\V1\SystemLinkController;
 use App\Http\Controllers\Api\V1\TelegramAuthController;
@@ -125,6 +126,12 @@ Route::prefix('v1')->group(function () {
                 ->middleware('shop.perm:manage_recipes');
             Route::apiResource('recipes', RecipeController::class)
                 ->middleware('shop.perm:manage_recipes');
+            // ── Partiya birliklari (tizim + do'konning o'zi qo'shganlari) ──
+            Route::middleware('shop.perm:manage_recipes')->group(function () {
+                Route::get('measurement-units/batch', [ShopBatchUnitController::class, 'index']);
+                Route::post('measurement-units', [ShopBatchUnitController::class, 'store']);
+                Route::delete('measurement-units/{unit}', [ShopBatchUnitController::class, 'destroy']);
+            });
             Route::apiResource('productions', ProductionController::class)
                 ->only(['index', 'store', 'update', 'destroy'])
                 ->middleware('shop.perm:manage_production');

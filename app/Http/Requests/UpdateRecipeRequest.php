@@ -34,9 +34,14 @@ class UpdateRecipeRequest extends FormRequest
             'measurement_unit_id' => [
                 'sometimes',
                 'uuid',
-                Rule::exists('measurement_units', 'id')->where(function ($q) {
-                    $q->where('type', 'batch')
-                        ->whereIn('code', MeasurementUnit::BATCH_UNIT_CODES);
+                // Tizim partiya birliklari yoki shu do'konning o'z birligi.
+                Rule::exists('measurement_units', 'id')->where(function ($q) use ($shop) {
+                    $q->where('type', 'batch')->where(function ($g) use ($shop) {
+                        $g->where(function ($s) {
+                            $s->whereNull('shop_id')
+                                ->whereIn('code', MeasurementUnit::BATCH_UNIT_CODES);
+                        })->orWhere('shop_id', $shop->id);
+                    });
                 }),
             ],
             'name' => ['sometimes', 'string', 'max:255'],

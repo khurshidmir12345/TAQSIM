@@ -31,6 +31,7 @@ class MeasurementUnitResource extends JsonResource
                 'ru' => $this->example_ru,
             ],
             'sort_order' => $this->sort_order,
+            'is_custom'  => $this->shop_id !== null,
         ];
     }
 

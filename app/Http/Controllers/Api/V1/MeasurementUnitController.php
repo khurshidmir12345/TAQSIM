@@ -16,7 +16,7 @@ class MeasurementUnitController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = MeasurementUnit::active()->orderBy('sort_order');
+        $query = MeasurementUnit::active()->global()->orderBy('sort_order');
 
         if ($request->has('type')) {
             $query->where('type', $request->query('type'));
@@ -67,6 +67,7 @@ class MeasurementUnitController extends Controller
     public function batch(): JsonResponse
     {
         $units = MeasurementUnit::active()
+            ->global()
             ->batch()
             ->whereIn('code', MeasurementUnit::BATCH_UNIT_CODES)
             ->orderBy('sort_order')

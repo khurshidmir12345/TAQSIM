@@ -171,8 +171,11 @@ class OutletService
     }
 
     /**
-     * Sana oralig'ida do'konlar bo'yicha jami: berildi, to'landi.
-     * Kunlik foyda uchun: nasiya = berildi − to'landi.
+     * Sana oralig'ida do'konlar bo'yicha jami.
+     *
+     * Kunlik foyda uchun: nasiya = berildi − qaytdi − to'landi (daftardagi
+     * qoldiq bilan bir xil mantiq). Qaytgan mahsulot sotilmagan — u alohida
+     * `returned` sifatida tushumdan ayriladi.
      *
      * @return array{delivered: float, returned: float, paid: float, credit: float}
      */
@@ -194,7 +197,7 @@ class OutletService
             'delivered' => round($delivered, 2),
             'returned' => round($returned, 2),
             'paid' => round($paid, 2),
-            'credit' => round($delivered - $paid, 2),
+            'credit' => round($delivered - $returned - $paid, 2),
         ];
     }
 }

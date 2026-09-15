@@ -93,8 +93,11 @@ class ReportService
         $totalReturnsQty = (int) $returns->sum('quantity');
         $totalReturnsAmount = (float) $returns->sum('total_amount');
 
+        // Do'konlardan qaytgan mahsulot ham sotilmagan — tushumdan ayriladi.
+        $outletTotals = $this->outletService()->periodTotals($shop, $from, $to);
+
         $soldQuantity = $totalBread - $totalReturnsQty;
-        $netSales = $totalProductionAmount - $totalReturnsAmount;
+        $netSales = $totalProductionAmount - $totalReturnsAmount - $outletTotals['returned'];
 
         $ingredientCost = (float) $productions->sum('ingredient_cost');
         $externalExpenses = (float) $expenses->sum('amount');
@@ -108,9 +111,9 @@ class ReportService
         $profit = $netSales - $ingredientCost;
 
         // Do'konlarga nasiya berilgan mahsulot puli hali kelmagan — foydadan
-        // ayriladi; do'kon to'lagan kuni esa qo'shiladi. Naqd berilgan mahsulot
-        // (berildi = to'landi) foydani o'zgartirmaydi.
-        $outletTotals = $this->outletService()->periodTotals($shop, $from, $to);
+        // ayriladi; do'kon to'lagan yoki mahsulot qaytargan kuni esa nasiya
+        // shunchalik kamayadi. Naqd berilgan mahsulot (berildi = to'landi)
+        // foydani o'zgartirmaydi.
         $profit -= $outletTotals['credit'];
 
         $expensesByCategory = $expenses->groupBy('category')

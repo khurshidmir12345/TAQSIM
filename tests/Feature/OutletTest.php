@@ -197,6 +197,26 @@ class OutletTest extends TestCase
             'paid_amount' => 12000,
         ])->assertCreated();
         $this->assertSame(0.0, (float) $report('2026-09-12')['profit']);
+
+        // Qaytgan mahsulot: nasiya shunchalik kamayadi (+8 000), lekin u
+        // sotilmagan — tushumdan ayriladi (−8 000). Kun foydasi 0, nasiya −8 000.
+        $this->actingAs($this->user)->postJson($entries, [
+            'type' => 'return', 'date' => '2026-09-13',
+            'items' => [['bread_category_id' => $this->non->id, 'quantity' => 2]],
+        ])->assertCreated();
+        $r = $report('2026-09-13');
+        $this->assertSame(0.0, (float) $r['profit']);
+        $this->assertSame(-8000.0, (float) $r['outlets']['credit']);
+        $this->assertSame(8000.0, (float) $r['outlets']['returned']);
+        $this->assertSame(-8000.0, (float) $r['net_sales']);
+
+        // Butun davr: 13 dona berildi, 2 dona qaytdi, 10 dona puli kelmadi →
+        // nasiya 40 000 − 8 000 − 40 000 + ... = daftardagi qoldiq bilan teng.
+        $range = $this->actingAs($this->user)
+            ->getJson("/api/v1/shops/{$this->shop->id}/reports/range?from=2026-09-10&to=2026-09-13")
+            ->assertOk()->json('data.report');
+        $balance = (float) $this->actingAs($this->user)->getJson($this->base() . "/{$id}")->json('data.outlet.totals.balance');
+        $this->assertSame($balance, (float) $range['outlets']['credit']);
     }
 
     public function test_other_shops_outlet_is_not_visible(): void

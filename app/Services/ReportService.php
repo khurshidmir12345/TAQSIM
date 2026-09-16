@@ -271,6 +271,83 @@ class ReportService
         return Carbon::parse(min($dates))->toDateString();
     }
 
+    /**
+     * Davrda ishlatilgan xom ashyo: har bir xom ashyo bo'yicha miqdor va qiymat.
+     *
+     * Chiqim × retsept: miqdor = retseptdagi miqdor × partiya soni. Qiymat
+     * xom ashyoning joriy narxida — "bugun qancha xom ashyo ketdi" savoliga
+     * javob. Har xom ashyo qaysi mahsulotga qancha ketgani ham bor.
+     *
+     * @return array{period: array{from: string, to: string}, production_count: int, total_cost: float, items: array<int, array<string, mixed>>}
+     */
+    public function ingredientUsage(Shop $shop, string $from, string $to): array
+    {
+        $fromDt = Carbon::parse($from)->startOfDay();
+        $toDt = Carbon::parse($to)->endOfDay();
+
+        $productions = $shop->productions()
+            ->with(['breadCategory', 'recipe.recipeIngredients.ingredient.measurementUnit'])
+            ->whereBetween('date', [$fromDt, $toDt])
+            ->get();
+
+        $items = [];
+        foreach ($productions as $p) {
+            $recipe = $p->recipe;
+            if ($recipe === null) {
+                continue;
+            }
+            $batches = (float) $p->batch_count;
+            $productName = $p->breadCategory?->name ?? $recipe->name;
+
+            foreach ($recipe->recipeIngredients as $ri) {
+                $ing = $ri->ingredient;
+                if ($ing === null) {
+                    continue;
+                }
+                $qty = (float) $ri->quantity * $batches;
+                $cost = $qty * (float) $ing->price_per_unit;
+
+                $row = &$items[$ing->id];
+                $row ??= [
+                    'ingredient_id' => $ing->id,
+                    'name' => $ing->name,
+                    'unit' => $ing->measurementUnit?->code ?? $ing->unit,
+                    'is_flour' => (bool) $ing->is_flour,
+                    'price_per_unit' => (float) $ing->price_per_unit,
+                    'quantity' => 0.0,
+                    'cost' => 0.0,
+                    'by_product' => [],
+                ];
+                $row['quantity'] += $qty;
+                $row['cost'] += $cost;
+                $row['by_product'][$productName] = ($row['by_product'][$productName] ?? 0.0) + $qty;
+                unset($row);
+            }
+        }
+
+        $list = array_values(array_map(function (array $row): array {
+            $byProduct = [];
+            foreach ($row['by_product'] as $name => $qty) {
+                $byProduct[] = ['name' => $name, 'quantity' => round($qty, 3)];
+            }
+            usort($byProduct, fn ($a, $b) => $b['quantity'] <=> $a['quantity']);
+            $row['by_product'] = $byProduct;
+            $row['quantity'] = round($row['quantity'], 3);
+            $row['cost'] = round($row['cost'], 2);
+
+            return $row;
+        }, $items));
+
+        usort($list, fn ($a, $b) => $b['cost'] <=> $a['cost']);
+
+        return [
+            'period' => ['from' => $fromDt->toDateString(), 'to' => $toDt->toDateString()],
+            'production_count' => $productions->count(),
+            'total_cost' => round(array_sum(array_column($list, 'cost')), 2),
+            'items' => $list,
+        ];
+    }
+
     public function statistics(Shop $shop, string $from, string $to): array
     {
         $fromDt = Carbon::parse($from)->startOfDay();

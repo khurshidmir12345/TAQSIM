@@ -68,6 +68,28 @@ class ReportController extends BaseShopController
         ]);
     }
 
+    /**
+     * GET /v1/shops/{shop}/reports/ingredients?date=  yoki ?from=&to=
+     * Kun (yoki davr) bo'yicha ishlatilgan xom ashyo miqdorlari.
+     */
+    public function ingredients(Request $request, Shop $shop): JsonResponse
+    {
+        $this->authorizeShop($request, $shop);
+
+        $data = $request->validate([
+            'date' => ['required_without:from', 'date'],
+            'from' => ['required_without:date', 'date'],
+            'to' => ['required_with:from', 'date', 'after_or_equal:from'],
+        ]);
+
+        $from = $data['from'] ?? $data['date'];
+        $to = $data['to'] ?? $data['date'];
+
+        return $this->success([
+            'usage' => $this->reportService->ingredientUsage($shop, $from, $to),
+        ]);
+    }
+
     public function summary(Request $request, Shop $shop): JsonResponse
     {
         $this->authorizeShop($request, $shop);

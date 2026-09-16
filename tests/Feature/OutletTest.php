@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ShopUserType;
 use App\Models\BreadCategory;
+use App\Models\BreadReturn;
 use App\Models\CashTransaction;
 use App\Models\Currency;
 use App\Models\Shop;
@@ -250,6 +251,65 @@ class OutletTest extends TestCase
             ->assertOk()->json('data.report');
         $balance = (float) $this->actingAs($this->user)->getJson($this->base() . "/{$id}")->json('data.outlet.totals.balance');
         $this->assertSame($balance, (float) $range['outlets']['credit']);
+    }
+
+    public function test_outlet_return_is_a_regular_bread_return_with_paired_cash_rows(): void
+    {
+        $id = $this->createOutlet('Chorsu');
+        $entries = $this->base() . "/{$id}/entries";
+
+        $entryId = $this->actingAs($this->user)->postJson($entries, [
+            'type' => 'return', 'date' => '2026-09-13',
+            'items' => [['bread_category_id' => $this->non->id, 'quantity' => 2]],
+        ])->assertCreated()->json('data.entry.id');
+
+        // Vozvrat jadvalida do'konga bog'langan yozuv.
+        $return = BreadReturn::query()->where('outlet_entry_id', $entryId)->first();
+        $this->assertNotNull($return);
+        $this->assertSame(2, $return->quantity);
+        $this->assertSame(8000.0, (float) $return->total_amount);
+        $this->assertSame('Chorsu', $return->reason);
+
+        // Vozvratlar ro'yxatida ham ko'rinadi, do'kon nomi bilan.
+        $list = $this->actingAs($this->user)->getJson("/api/v1/shops/{$this->shop->id}/returns")->assertOk();
+        $this->assertSame('Chorsu', $list->json('data.returns.0.outlet_name'));
+
+        // Kassa: vozvrat chiqimi va nasiya kamayishi kirimi — juft, jami 0.
+        $this->assertSame(8000.0, (float) CashTransaction::query()->where('source', 'return')->sum('amount'));
+        $this->assertSame(8000.0, (float) CashTransaction::query()->where('source', 'outlet_return')->sum('amount'));
+
+        // Kunlik hisobot: vozvrat orqali tushumdan ayrilgan, nasiya −8 000, foyda 0.
+        $r = $this->actingAs($this->user)
+            ->getJson("/api/v1/shops/{$this->shop->id}/reports/daily?date=2026-09-13")
+            ->assertOk()->json('data.report');
+        $this->assertSame(8000.0, (float) $r['returns']['total_amount']);
+        $this->assertSame(-8000.0, (float) $r['net_sales']);
+        $this->assertSame(0.0, (float) $r['profit']);
+
+        // Daftar qatori o'chirilsa vozvrat va kassa aksi ham ketadi.
+        $this->actingAs($this->user)->deleteJson($entries . "/{$entryId}")->assertOk();
+        $this->assertSame(0, BreadReturn::query()->count());
+        $this->assertSame(0, CashTransaction::query()->whereIn('source', ['return', 'outlet_return'])->count());
+    }
+
+    public function test_deleting_bread_return_removes_outlet_ledger_row(): void
+    {
+        $id = $this->createOutlet();
+        $entries = $this->base() . "/{$id}/entries";
+
+        $entryId = $this->actingAs($this->user)->postJson($entries, [
+            'type' => 'return', 'date' => '2026-09-13',
+            'items' => [['bread_category_id' => $this->non->id, 'quantity' => 1]],
+        ])->assertCreated()->json('data.entry.id');
+        $returnId = BreadReturn::query()->where('outlet_entry_id', $entryId)->value('id');
+
+        $this->actingAs($this->user)
+            ->deleteJson("/api/v1/shops/{$this->shop->id}/returns/{$returnId}")
+            ->assertOk();
+
+        $this->assertDatabaseMissing('outlet_entries', ['id' => $entryId]);
+        $this->assertSame(0, CashTransaction::query()->where('source', 'outlet_return')->count());
+        $this->assertSame(0.0, (float) $this->actingAs($this->user)->getJson($this->base() . "/{$id}")->json('data.outlet.totals.balance'));
     }
 
     public function test_other_shops_outlet_is_not_visible(): void

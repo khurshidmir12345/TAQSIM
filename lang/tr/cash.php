@@ -16,6 +16,7 @@ return [
 
     'auto_categories' => [
         'outlet_credit' => 'Bayiye veresiye',
+        'outlet_credit_reduced' => 'Bayi borcu azaldı',
         'outlet_payment' => 'Bayiden tahsilat',
         'production_income' => 'Ürün geliri',
         'production_cost' => 'Hammadde',

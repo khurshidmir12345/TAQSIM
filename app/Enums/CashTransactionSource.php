@@ -24,6 +24,9 @@ enum CashTransactionSource: string
     /** Do'konga nasiya berilgan mahsulot puli — chiqim. */
     case OutletCredit = 'outlet_credit';
 
+    /** Do'kondan mahsulot qaytdi — nasiya shunchaga kamaydi (kirim). */
+    case OutletReturn = 'outlet_return';
+
     /** Foydalanuvchi tahrirlashi/o'chirishi mumkinmi. */
     public function isEditable(): bool
     {

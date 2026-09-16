@@ -29,6 +29,8 @@ class BreadReturnResource extends JsonResource
             'price_per_unit' => $this->price_per_unit,
             'total_amount' => $this->total_amount,
             'reason' => $this->reason,
+            'outlet_entry_id' => $this->outlet_entry_id,
+            'outlet_name' => $this->outlet_entry_id ? $this->outletEntry?->outlet?->name : null,
             'created_at' => $this->created_at,
         ];
     }

@@ -16,6 +16,7 @@ class BreadReturn extends Model
         'shop_id',
         'bread_category_id',
         'production_id',
+        'outlet_entry_id',
         'date',
         'quantity',
         'price_per_unit',
@@ -57,5 +58,16 @@ class BreadReturn extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** Do'kondan qaytgan bo'lsa — daftardagi qatori. */
+    public function outletEntry(): BelongsTo
+    {
+        return $this->belongsTo(OutletEntry::class);
+    }
+
+    public function isFromOutlet(): bool
+    {
+        return $this->outlet_entry_id !== null;
     }
 }

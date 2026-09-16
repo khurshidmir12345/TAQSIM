@@ -16,6 +16,7 @@ return [
 
     'auto_categories' => [
         'outlet_credit' => 'Do‘konga nasiya',
+        'outlet_credit_reduced' => 'Do‘kon nasiyasi kamaydi',
         'outlet_payment' => 'Do‘kondan tushum',
         'production_income' => 'Mahsulot tushumi',
         'production_cost' => 'Xom ashyo',

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\OutletEntryType;
 use App\Models\BreadCategory;
+use App\Models\BreadReturn;
+use App\Models\Production;
 use App\Models\Outlet;
 use App\Models\OutletEntry;
 use App\Models\Shop;
@@ -18,6 +20,9 @@ use Illuminate\Support\Facades\DB;
  */
 class OutletService
 {
+    /** Daftar qatori o'chirilayotganda vozvrat observer'i qayta chaqirmasin. */
+    public static bool $cascading = false;
+
     public function __construct(
         private readonly CashMirrorService $mirror,
     ) {}
@@ -134,6 +139,34 @@ class OutletService
                 $this->mirror->syncOutletDelivery($entry);
             }
 
+            // Qaytgan mahsulot — oddiy vozvrat: asosiy sahifa, tarix, statistika
+            // va kassada bir xil ayriladi. Kassada nasiya kamayishi juft kirim.
+            if ($type === OutletEntryType::Return) {
+                $entry->loadMissing('outlet');
+                foreach ($items as $item) {
+                    $productionId = Production::query()
+                        ->where('shop_id', $shop->id)
+                        ->where('bread_category_id', $item['bread_category_id'])
+                        ->whereDate('date', $data['date'])
+                        ->orderByDesc('created_at')
+                        ->value('id');
+
+                    BreadReturn::create([
+                        'shop_id' => $shop->id,
+                        'bread_category_id' => $item['bread_category_id'],
+                        'production_id' => $productionId,
+                        'outlet_entry_id' => $entry->id,
+                        'date' => $data['date'],
+                        'quantity' => max(1, (int) round($item['quantity'])),
+                        'price_per_unit' => $item['unit_price'],
+                        'total_amount' => $item['subtotal'],
+                        'reason' => $entry->outlet?->name,
+                        'created_by' => $userId,
+                    ]);
+                }
+                $this->mirror->syncOutletReturn($entry);
+            }
+
             return $entry;
         });
     }
@@ -141,16 +174,25 @@ class OutletService
     /** Qatorni (va unga bog'langan naqd to'lovni) o'chiradi; kassa aksi ham ketadi. */
     public function deleteEntry(OutletEntry $entry): void
     {
-        DB::transaction(function () use ($entry) {
-            $linked = OutletEntry::query()->where('related_entry_id', $entry->id)->get();
-            foreach ($linked as $row) {
-                $this->mirror->forgetOutletPayment($row);
-                $row->delete();
-            }
-            $this->mirror->forgetOutletPayment($entry);
-            $this->mirror->forgetOutletDelivery($entry);
-            $entry->delete();
-        });
+        self::$cascading = true;
+        try {
+            DB::transaction(function () use ($entry) {
+                $linked = OutletEntry::query()->where('related_entry_id', $entry->id)->get();
+                foreach ($linked as $row) {
+                    $this->mirror->forgetOutletPayment($row);
+                    $row->delete();
+                }
+                // Bog'liq vozvratlar ham ketadi (observer kassadagi aksini tozalaydi).
+                BreadReturn::query()->where('outlet_entry_id', $entry->id)->get()
+                    ->each(fn (BreadReturn $r) => $r->delete());
+                $this->mirror->forgetOutletPayment($entry);
+                $this->mirror->forgetOutletDelivery($entry);
+                $this->mirror->forgetOutletReturn($entry);
+                $entry->delete();
+            });
+        } finally {
+            self::$cascading = false;
+        }
     }
 
     /**

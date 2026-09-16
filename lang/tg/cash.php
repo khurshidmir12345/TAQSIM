@@ -16,6 +16,7 @@ return [
 
     'auto_categories' => [
         'outlet_credit' => 'Насия ба мағоза',
+        'outlet_credit_reduced' => 'Қарзи мағоза кам шуд',
         'outlet_payment' => 'Пардохт аз мағоза',
         'production_income' => 'Даромади маҳсулот',
         'production_cost' => 'Ашёи хом',

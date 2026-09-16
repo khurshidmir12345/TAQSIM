@@ -34,6 +34,8 @@ class CashMirrorService
 
     public const CATEGORY_OUTLET_CREDIT = 'outlet_credit';
 
+    public const CATEGORY_OUTLET_CREDIT_REDUCED = 'outlet_credit_reduced';
+
     public function syncProduction(Production $production): void
     {
         $shop = $production->shop;
@@ -92,6 +94,7 @@ class CashMirrorService
             (float) $return->total_amount,
             $return->date,
             $return->created_by,
+            $return->reason,
         );
     }
 
@@ -159,6 +162,40 @@ class CashMirrorService
         );
     }
 
+    /**
+     * Do'kondan mahsulot qaytdi → nasiya shunchaga kamaydi (kirim).
+     * Vozvrat chiqimi bilan juft: o'sha kuni pul harakati yo'q, jami 0.
+     */
+    public function syncOutletReturn(OutletEntry $entry): void
+    {
+        $shop = $entry->shop;
+
+        if (! $shop instanceof Shop || ! $shop->cash_track_outlet_payments) {
+            $this->forget(CashTransactionSource::OutletReturn, $entry->id);
+
+            return;
+        }
+
+        $entry->loadMissing('outlet');
+
+        $this->put(
+            $shop,
+            CashTransactionType::Income,
+            CashTransactionSource::OutletReturn,
+            $entry->id,
+            self::CATEGORY_OUTLET_CREDIT_REDUCED,
+            (float) $entry->amount,
+            $entry->date,
+            $entry->created_by,
+            $entry->outlet?->name,
+        );
+    }
+
+    public function forgetOutletReturn(OutletEntry $entry): void
+    {
+        $this->forget(CashTransactionSource::OutletReturn, $entry->id);
+    }
+
     public function forgetOutletDelivery(OutletEntry $entry): void
     {
         $this->forget(CashTransactionSource::OutletCredit, $entry->id);
@@ -209,13 +246,16 @@ class CashMirrorService
 
         $this->forgetAll($shop, CashTransactionSource::OutletPayment);
         $this->forgetAll($shop, CashTransactionSource::OutletCredit);
+        $this->forgetAll($shop, CashTransactionSource::OutletReturn);
         if ($shop->cash_track_outlet_payments) {
-            $shop->outletEntries()->whereIn('type', ['payment', 'delivery'])->with('outlet')
+            $shop->outletEntries()->with('outlet')
                 ->chunkById(200, function ($entries): void {
                     foreach ($entries as $entry) {
-                        $entry->type === OutletEntryType::Payment
-                            ? $this->syncOutletPayment($entry)
-                            : $this->syncOutletDelivery($entry);
+                        match ($entry->type) {
+                            OutletEntryType::Payment => $this->syncOutletPayment($entry),
+                            OutletEntryType::Delivery => $this->syncOutletDelivery($entry),
+                            OutletEntryType::Return => $this->syncOutletReturn($entry),
+                        };
                     }
                 });
         }

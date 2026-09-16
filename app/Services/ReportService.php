@@ -93,11 +93,12 @@ class ReportService
         $totalReturnsQty = (int) $returns->sum('quantity');
         $totalReturnsAmount = (float) $returns->sum('total_amount');
 
-        // Do'konlardan qaytgan mahsulot ham sotilmagan — tushumdan ayriladi.
+        // Do'konlardan qaytgan mahsulot oddiy vozvrat sifatida yozilgan —
+        // u $returns ichida, alohida ayrilmaydi.
         $outletTotals = $this->outletService()->periodTotals($shop, $from, $to);
 
         $soldQuantity = $totalBread - $totalReturnsQty;
-        $netSales = $totalProductionAmount - $totalReturnsAmount - $outletTotals['returned'];
+        $netSales = $totalProductionAmount - $totalReturnsAmount;
 
         $ingredientCost = (float) $productions->sum('ingredient_cost');
         $externalExpenses = (float) $expenses->sum('amount');

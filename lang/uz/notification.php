@@ -24,6 +24,11 @@ return [
     'order_reminder' => [
         'title' => 'Bugungi zakazlar',
         'body' => ':shop — bugun :count ta zakaz yetkazib berilishi kerak.',
+        // Telegram bot orqali — HTML.
+        'telegram' => "🥖 <b>Bugun sizda :count ta zakaz bor</b> (:shop)
+
+Kuch-quvvat tilaymiz, ishlaringiz unumli bo'lsin! 💪
+Ro'yxat ilovadagi «Zakazlar» bo'limida.",
     ],
 
 ];

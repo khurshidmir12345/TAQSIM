@@ -24,6 +24,11 @@ return [
     'order_reminder' => [
         'title' => 'Today’s orders',
         'body' => ':shop — :count order(s) to deliver today.',
+        // Telegram bot orqali — HTML.
+        'telegram' => "🥖 <b>You have :count order(s) today</b> (:shop)
+
+Wishing you energy and a productive day! 💪
+The list is in the Orders section of the app.",
     ],
 
 ];

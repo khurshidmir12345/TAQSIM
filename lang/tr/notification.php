@@ -24,6 +24,11 @@ return [
     'order_reminder' => [
         'title' => 'Bugünkü siparişler',
         'body' => ':shop — bugün :count sipariş teslim edilmeli.',
+        // Telegram bot orqali — HTML.
+        'telegram' => "🥖 <b>Bugün :count siparişiniz var</b> (:shop)
+
+Kolay gelsin, verimli bir gün dileriz! 💪
+Liste uygulamadaki «Siparişler» bölümünde.",
     ],
 
 ];

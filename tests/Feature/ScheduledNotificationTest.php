@@ -18,6 +18,8 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
+use App\Models\SystemBot;
 use Tests\TestCase;
 
 /**
@@ -154,6 +156,27 @@ class ScheduledNotificationTest extends TestCase
 
         $this->assertStringContainsString('2', $notification->body);
         $this->assertStringContainsString('Baraka nonvoyxona', $notification->body);
+    }
+
+    public function test_order_reminder_also_goes_to_telegram_in_uzbek(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
+        SystemBot::create(['name' => 'Register', 'type' => 'register', 'token' => 'tok', 'username' => 'bot', 'is_active' => true]);
+
+        $shop = $this->makeShop('Baraka nonvoyxona');
+        $member = $this->makeMember($shop);
+        $member->forceFill(['telegram_chat_id' => 4242, 'locale' => null])->save();
+        $this->makeOrder($shop, $this->today());
+        $this->makeOrder($shop, $this->today());
+        $this->makeOrder($shop, $this->today());
+
+        (new SendOrderReminders)->handle(app(NotificationService::class));
+
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($r) => $r['chat_id'] === 4242
+            && str_contains($r['text'], '3 ta zakaz')
+            && str_contains($r['text'], 'Baraka nonvoyxona')
+            && str_contains($r['text'], 'Kuch-quvvat'));
     }
 
     public function test_order_reminder_ignores_other_days_and_closed_orders(): void

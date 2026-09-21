@@ -39,12 +39,17 @@ class AccessPromoTest extends TestCase
         $this->owner(111, 'uz');
         $this->owner(222, 'ru');
         $this->owner(null);
+        // Til tanlanmagan — o'zbekcha ketadi (APP_LOCALE=en bo'lsa ham).
+        config(['app.locale' => 'en']);
+        $unset = User::factory()->create(['telegram_chat_id' => 333, 'locale' => null]);
+        $unset->shops()->attach(Shop::create(['name' => 'U', 'slug' => 'u-' . Str::random(5), 'is_active' => true, 'currency_id' => Currency::query()->where('code', 'UZS')->value('id')])->id, ['user_type' => ShopUserType::Owner]);
 
-        $this->artisan('access:promo')->expectsOutputToContain('Qabul qiluvchilar: 2')->assertSuccessful();
+        $this->artisan('access:promo')->expectsOutputToContain('Qabul qiluvchilar: 3')->assertSuccessful();
         Http::assertNothingSent();
 
         $this->artisan('access:promo', ['--send' => true])->assertSuccessful();
-        Http::assertSentCount(2);
+        Http::assertSentCount(3);
+        Http::assertSent(fn ($r) => $r['chat_id'] === 333 && str_contains($r['text'], "so'm") && str_contains($r['text'], 'chegirma'));
         Http::assertSent(fn ($r) => $r['chat_id'] === 111
             && str_contains($r['text'], '150 000') && str_contains($r['text'], '17 000')
             && str_contains($r['text'], '@taqseem_admin_bot') && $r['parse_mode'] === 'HTML');

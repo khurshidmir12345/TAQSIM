@@ -207,4 +207,15 @@ class User extends Authenticatable implements FilamentUser
 
         return $this->cachedUserType = ShopUserType::Owner->value;
     }
+
+    /**
+     * Xabarlar (Telegram, push) uchun til. Foydalanuvchi tanlamagan bo'lsa —
+     * o'zbekcha: APP_LOCALE=en faqat do'kon tekshiruvi uchun, bozor o'zbek.
+     */
+    public function messageLocale(): string
+    {
+        $supported = ['uz', 'uz_CYRL', 'ru', 'kk', 'ky', 'tr', 'tg'];
+
+        return in_array($this->locale, $supported, true) ? $this->locale : 'uz';
+    }
 }

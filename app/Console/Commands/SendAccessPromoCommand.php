@@ -20,6 +20,7 @@ class SendAccessPromoCommand extends Command
     protected $signature = 'access:promo
         {--send : Haqiqatan yuborish (aks holda faqat hisob-kitob)}
         {--expired-only : Faqat muddati tugaganlarga}
+        {--locale-unset : Faqat tilini tanlamaganlarga (qayta yuborish uchun)}
         {--limit=0 : Ko\'pi bilan shuncha odamga (0 — hammaga)}';
 
     protected $description = 'Premium narxlari haqida Telegram orqali marketing xabari';
@@ -48,6 +49,10 @@ class SendAccessPromoCommand extends Command
             $query->where('access_until', '<', now());
         }
 
+        if ($this->option('locale-unset')) {
+            $query->whereNull('locale');
+        }
+
         $limit = (int) $this->option('limit');
         if ($limit > 0) {
             $query->limit($limit);
@@ -65,7 +70,7 @@ class SendAccessPromoCommand extends Command
         $sent = 0;
         $failed = 0;
         foreach ($users as $user) {
-            $locale = $user->locale ?: config('app.locale');
+            $locale = $user->messageLocale();
             $text = __('access.promo', [
                 'pricing' => __('access.pricing', [], $locale),
                 'contact' => (string) config('access.contact'),

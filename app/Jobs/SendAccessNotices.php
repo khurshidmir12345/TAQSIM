@@ -115,7 +115,7 @@ class SendAccessNotices implements ShouldQueue
             default => 'access.notice.ended',
         };
 
-        $locale = $user->locale ?: config('app.locale');
+        $locale = $user->messageLocale();
         $text = __($key, [
             'days' => (string) $daysBefore,
             'contact' => (string) config('access.contact'),

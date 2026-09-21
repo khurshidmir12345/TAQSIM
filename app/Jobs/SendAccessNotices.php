@@ -115,10 +115,15 @@ class SendAccessNotices implements ShouldQueue
             default => 'access.notice.ended',
         };
 
+        $locale = $user->locale ?: config('app.locale');
         $text = __($key, [
             'days' => (string) $daysBefore,
             'contact' => (string) config('access.contact'),
-        ], $user->locale ?: config('app.locale'));
+        ], $locale);
+
+        // Narxlar ogohlantirish oxirida — foydalanuvchi qaror qilishi uchun
+        // botga o'tmasdan ham ko'rsin.
+        $text .= "\n\n" . __('access.pricing', [], $locale);
 
         try {
             $telegram->sendMessage($token, (int) $user->telegram_chat_id, $text);

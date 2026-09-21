@@ -18,4 +18,21 @@ return [
         'ended' => "🔒 Statistika, Buyurtmalar va Xodimlar yopildi\n\nQolgan bo'limlar avvalgidek bepul.\n\nBarcha imkoniyatlardan to'liq foydalanish uchun premium oling 👉 :contact",
     ],
 
+    // Premium narxlari — ogohlantirishlar oxiriga qo'shiladi va promo xabarda.
+    'pricing' => "⭐ <b>Premium narxlari</b>
+
+📅 Oylik: <s>39 000 so'm</s> → <b>17 000 so'm/oy</b>
+🎁 56% chegirma
+
+🔥 Yillik: <s>468 000 so'm</s> → <b>150 000 so'm/yil</b>
+🎁 68% chegirma — <b>318 000 so'm tejaysiz</b>, oyiga atigi ~12 500 so'm",
+
+    // Bir martalik marketing xabari (`access:promo`).
+    'promo' => "⭐ <b>Taqseem Premium — maxsus chegirma!</b>
+
+Statistika, Buyurtmalar va Xodimlar bo'limlaridan to'liq foydalaning — hozircha maxsus chegirmali narxda.
+
+:pricing
+
+Premium olish va murojaat uchun admin botga yozing 👉 :contact",
 ];

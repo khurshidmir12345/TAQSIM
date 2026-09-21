@@ -18,4 +18,21 @@ return [
         'ended' => "🔒 Statistics, Orders and Employees are closed\n\nEverything else works free as before.\n\nGet premium to use every feature 👉 :contact",
     ],
 
+    // Premium narxlari — ogohlantirishlar oxiriga qo'shiladi va promo xabarda.
+    'pricing' => "⭐ <b>Premium pricing</b>
+
+📅 Monthly: <s>39 000 UZS</s> → <b>17 000 UZS/month</b>
+🎁 56% off
+
+🔥 Yearly: <s>468 000 UZS</s> → <b>150 000 UZS/year</b>
+🎁 68% off — <b>save 318 000 UZS</b>, just ~12 500 UZS a month",
+
+    // Bir martalik marketing xabari (`access:promo`).
+    'promo' => "⭐ <b>Taqseem Premium — special discount!</b>
+
+Use Statistics, Orders and Employees without limits — at a special price for now.
+
+:pricing
+
+To get Premium or ask a question, message the admin bot 👉 :contact",
 ];

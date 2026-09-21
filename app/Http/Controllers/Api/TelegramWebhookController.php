@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendTelegramTutorial;
 use App\Models\SystemBot;
 use App\Models\TelegramAuthSession;
 use App\Models\User;
@@ -209,6 +210,9 @@ class TelegramWebhookController extends Controller
             ."Endi muhim bildirishnomalarni shu yerda olasiz. \u{1F514}\n\n"
             ."Ilovaga qaytishingiz mumkin. \u{1F4F2}",
         );
+
+        // Yangi ulangan foydalanuvchiga video qo'llanma — biroz kechiktirib.
+        SendTelegramTutorial::dispatch($user->id)->delay(now()->addSeconds(4));
     }
 
     /**
@@ -271,6 +275,9 @@ class TelegramWebhookController extends Controller
             $user = User::where('phone', $phone)->first()
                 ?? User::where('telegram_chat_id', $chatId)->first();
 
+            // Telegram birinchi marta ulanyaptimi — qo'llanma faqat shunda ketadi.
+            $newlyLinked = $user === null || (string) $user->telegram_chat_id !== (string) $chatId;
+
             if (! $user) {
                 $user = User::create([
                     'name' => $firstName,
@@ -317,7 +324,7 @@ class TelegramWebhookController extends Controller
                 'status' => 'completed',
             ]);
 
-            return ['result' => 'completed', 'session' => $session];
+            return ['result' => 'completed', 'session' => $session, 'user_id' => $user->id, 'newly_linked' => $newlyLinked];
         });
 
         if ($outcome['result'] === 'no_session') {
@@ -350,6 +357,10 @@ class TelegramWebhookController extends Controller
             "\u{1F4F2} Ilovaga qaytish",
             $this->buildReturnUrl($outcome['session']),
         );
+
+        if (! empty($outcome['newly_linked'])) {
+            SendTelegramTutorial::dispatch((string) $outcome['user_id'])->delay(now()->addSeconds(4));
+        }
     }
 
     /**

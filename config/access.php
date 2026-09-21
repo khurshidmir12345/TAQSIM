@@ -83,4 +83,7 @@ return [
 
     'contact' => env('ACCESS_CONTACT', '@taqseem_admin_bot'),
 
+    // Telegram ulangan zahoti yuboriladigan video qo'llanma (kanaldagi post).
+    'tutorial_video_url' => env('TUTORIAL_VIDEO_URL', 'https://t.me/taqseem_rasmiy/23'),
+
 ];

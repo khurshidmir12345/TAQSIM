@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendTelegramTutorial;
 use App\Models\SystemBot;
 use App\Models\TelegramAuthSession;
 use App\Models\User;
 use App\Services\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -64,6 +66,7 @@ class TelegramConnectTest extends TestCase
 
     public function test_connect_links_account_without_asking_for_phone(): void
     {
+        Queue::fake([SendTelegramTutorial::class]);
         $this->makeBot();
         $user = $this->makeUser();
 
@@ -87,6 +90,8 @@ class TelegramConnectTest extends TestCase
         $this->assertSame(self::CHAT_ID, $user->telegram_chat_id);
         $this->assertSame('khurshid_dev', $user->telegram_username);
         $this->assertSame('completed', $session->fresh()->status);
+        // Endi ulangan foydalanuvchiga video qo'llanma navbatga qo'yiladi.
+        Queue::assertPushed(SendTelegramTutorial::class, fn ($job) => $job->userId === $user->id);
     }
 
     public function test_unknown_token_explains_instead_of_asking_for_phone(): void

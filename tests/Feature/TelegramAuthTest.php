@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendTelegramTutorial;
 use App\Models\SystemBot;
 use App\Models\TelegramAuthSession;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Services\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\PersonalAccessToken;
 use Mockery\MockInterface;
@@ -226,6 +228,8 @@ class TelegramAuthTest extends TestCase
 
     public function test_duplicate_contact_completion_does_not_issue_second_token(): void
     {
+        // Qo'llanma job'i sinxron navbatda sendMessage'ni chaqirmasin.
+        Queue::fake([SendTelegramTutorial::class]);
         $bot = $this->makeBot();
         $this->mock(TelegramBotService::class, function (MockInterface $mock) {
             $mock->shouldReceive('sendWithInlineButton')->once()->andReturn(true);

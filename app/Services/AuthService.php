@@ -71,6 +71,56 @@ class AuthService
     }
 
     /**
+     * Telefon + SMS kodi bilan kirish: foydalanuvchi bo'lsa — o'zi, bo'lmasa
+     * yangisi yaratiladi (ism va parolsiz — keyin ilova ichida qo'yadi).
+     *
+     * Bitta qadam: alohida "ro'yxatdan o'tish" yo'q. Soft-deleted eski akkaunt
+     * telefonni band qilib tursa, `register` dagidek anonimlashtiriladi.
+     *
+     * @return array{0: User, 1: bool} [foydalanuvchi, yangi yaratildimi]
+     *
+     * @throws InvalidRegistrationCodeException
+     */
+    public function loginOrRegisterWithCode(string $phone, string $code): array
+    {
+        // Tranzaksiyadan tashqarida: noto'g'ri kodda urinishlar soni oshadi va
+        // rollback bilan qaytib ketmaydi (aks holda kodni cheksiz taxmin qilsa bo'lardi).
+        if ($this->otpService->validate($phone, $code) === null) {
+            throw new InvalidRegistrationCodeException;
+        }
+
+        try {
+            return DB::transaction(function () use ($phone) {
+                $existing = User::withTrashed()
+                    ->where('phone', $phone)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing !== null && ! $existing->trashed()) {
+                    return [$existing, false];
+                }
+
+                if ($existing !== null) {
+                    $this->purgeLegacyAccount($existing);
+                }
+
+                return [User::create([
+                    'phone' => $phone,
+                    'is_accepted_policy' => true,
+                    'phone_verified_at' => now(),
+                ]), true];
+            });
+        } catch (QueryException $e) {
+            // Ikki so'rov bir vaqtda yaratmoqchi bo'lsa — ikkinchisi tayyorini oladi.
+            if (DatabaseIntegrityException::isDuplicateKeyViolation($e)) {
+                return [User::where('phone', $phone)->firstOrFail(), false];
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
      * Akkauntni soft-delete qiladi: tokenlar, auth identity va PII tozalanadi.
      */
     public function deleteAccount(User $user): void

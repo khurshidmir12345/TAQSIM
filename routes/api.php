@@ -66,7 +66,9 @@ Route::prefix('v1')->group(function () {
 
     // ── Auth (public) ──────────────────────────────────────────────
     Route::middleware('throttle:auth')->group(function () {
+        Route::post('/auth/check-phone', [AuthController::class, 'checkPhone']);
         Route::post('/auth/send-code', [AuthController::class, 'sendCode']);
+        Route::post('/auth/verify-code', [AuthController::class, 'verifyCode']);
         Route::post('/auth/register', [AuthController::class, 'register']);
         Route::post('/auth/login', [AuthController::class, 'login']);
         Route::post('/auth/login-with-code', [AuthController::class, 'loginWithCode']);

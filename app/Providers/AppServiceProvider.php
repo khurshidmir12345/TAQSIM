@@ -25,8 +25,10 @@ class AppServiceProvider extends ServiceProvider
         Production::observe(ProductionObserver::class);
         BreadReturn::observe(BreadReturnObserver::class);
 
+        // Kirish 3 so'rovdan iborat (check-phone → send-code → verify-code);
+        // kodni taxmin qilishdan himoya OtpService'da (urinishlar, qayta yuborish).
         RateLimiter::for('auth', function (Request $request) {
-            return Limit::perMinute(5)->by($request->ip());
+            return Limit::perMinute(10)->by($request->ip());
         });
 
         RateLimiter::for('telegram-session', function (Request $request) {

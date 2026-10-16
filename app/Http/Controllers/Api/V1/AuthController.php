@@ -67,6 +67,60 @@ class AuthController extends Controller
     }
 
     /**
+     * POST /v1/auth/check-phone
+     *
+     * Kirishning birinchi qadami: ilova faqat telefon so'raydi, keyingi
+     * qadamni shu javob belgilaydi — parol bo'lsa parol, bo'lmasa SMS kod.
+     * Alohida "ro'yxatdan o'tish" yo'q (qarang: verifyCode).
+     */
+    public function checkPhone(SendCodeRequest $request): JsonResponse
+    {
+        $user = User::where('phone', $request->phone)->first();
+
+        return $this->success([
+            'exists' => $user !== null,
+            'has_password' => $user?->password !== null,
+        ]);
+    }
+
+    /**
+     * POST /v1/auth/verify-code
+     *
+     * SMS kodi tasdiqlanadi va darhol tizimga kiritiladi: foydalanuvchi bo'lsa —
+     * o'zi, bo'lmasa yangisi yaratiladi. Parol ixtiyoriy, keyin
+     * `PUT /auth/password` bilan qo'yiladi (eski parol so'ralmaydi).
+     */
+    public function verifyCode(LoginWithCodeRequest $request): JsonResponse
+    {
+        try {
+            [$user, $isNew] = $this->authService->loginOrRegisterWithCode($request->phone, $request->code);
+        } catch (InvalidRegistrationCodeException) {
+            throw ValidationException::withMessages([
+                'code' => [__('api.auth.invalid_code')],
+            ]);
+        }
+
+        if ($user->isBlocked()) {
+            return $this->error(__('api.errors.account_blocked'), 403, ['code' => 'account_blocked']);
+        }
+
+        // Paroli bor odam kod bilan kirdi — ehtimol unutgan. Yangisini eski
+        // parolsiz qo'ya olsin (ChangePasswordRequest shu belgiga qaraydi).
+        if (! $isNew && $user->password !== null) {
+            $user->forceFill(['must_set_password_at' => now()])->save();
+        }
+
+        $newToken = $user->createToken('mobile');
+        $this->devices->record($user, $newToken, $request);
+
+        return $this->success([
+            'user' => new UserResource($user->fresh()),
+            'token' => $newToken->plainTextToken,
+            'is_new' => $isNew,
+        ], __('api.auth.login_success'));
+    }
+
+    /**
      * POST /v1/auth/register
      * Verifies OTP then creates the user.
      * Returns 409 if phone already registered (mobile can redirect to login).

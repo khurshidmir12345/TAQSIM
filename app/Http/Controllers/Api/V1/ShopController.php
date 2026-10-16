@@ -12,6 +12,7 @@ use App\Models\CustomBusinessType;
 use App\Models\Currency;
 use App\Models\Shop;
 use App\Services\AccessService;
+use App\Services\DefaultCatalogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -82,6 +83,16 @@ class ShopController extends Controller
         );
         if (! empty($unitIds)) {
             $shop->measurementUnits()->sync($unitIds);
+        }
+
+        $shop->load(['businessType', 'currency']);
+
+        // Faqat yangi foydalanuvchining birinchi biznesiga namunaviy mahsulot
+        // va retseptlar — eski foydalanuvchilar o'zi sozlab bo'lgan.
+        if ($user->ownedShops()->count() === 1) {
+            // Nomlar ilovada tanlangan tilda (Accept-Language → SetApiLocale).
+            $locale = $request->hasHeader('Accept-Language') ? app()->getLocale() : $user->messageLocale();
+            app(DefaultCatalogService::class)->seed($shop, $locale);
         }
 
         $shop->load(['businessType', 'currency', 'measurementUnits', 'customBusinessType']);

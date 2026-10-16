@@ -20,6 +20,9 @@ class IngredientResource extends Resource
 
     protected static ?string $navigationGroup = 'Katalog';
 
+    // Sidebarda ko'rsatilmaydi: bu ma'lumotlar do'kon sahifasi ichida chiqadi.
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationLabel = 'Xom ashyolar';
 
     protected static ?string $modelLabel = 'Xom ashyo';

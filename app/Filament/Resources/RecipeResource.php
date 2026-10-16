@@ -20,6 +20,9 @@ class RecipeResource extends Resource
 
     protected static ?string $navigationGroup = 'Katalog';
 
+    // Sidebarda ko'rsatilmaydi: bu ma'lumotlar do'kon sahifasi ichida chiqadi.
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationLabel = 'Retseptlar';
 
     protected static ?string $modelLabel = 'Retsept';

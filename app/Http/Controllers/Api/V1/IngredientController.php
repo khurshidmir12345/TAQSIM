@@ -48,7 +48,7 @@ class IngredientController extends BaseShopController
         }
 
         $mu = MeasurementUnit::query()->findOrFail($data['measurement_unit_id']);
-        $data['unit'] = $this->unitStringFromMeasurementCode($mu->code);
+        $data['unit'] = Ingredient::unitFromMeasurementCode($mu->code);
 
         $ingredient = $shop->ingredients()->create($data);
         $ingredient->load(['currency', 'measurementUnit']);
@@ -76,7 +76,7 @@ class IngredientController extends BaseShopController
         $data = $request->validated();
         if (isset($data['measurement_unit_id'])) {
             $mu = MeasurementUnit::query()->findOrFail($data['measurement_unit_id']);
-            $data['unit'] = $this->unitStringFromMeasurementCode($mu->code);
+            $data['unit'] = Ingredient::unitFromMeasurementCode($mu->code);
         }
 
         $ingredient->update($data);
@@ -93,18 +93,5 @@ class IngredientController extends BaseShopController
         $ingredient->delete();
 
         return $this->deleted();
-    }
-
-    private function unitStringFromMeasurementCode(string $code): string
-    {
-        return match ($code) {
-            'kg', 'KG' => 'kg',
-            'g', 'G' => 'gram',
-            'l', 'LITR' => 'litr',
-            'ml', 'ML' => 'ml',
-            'm', 'METR' => 'metr',
-            'ta', 'DONA' => 'dona',
-            default => 'kg',
-        };
     }
 }

@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers\ShopsRelationManager;
 use App\Models\User;
+use App\Services\Admin\DirectMessage;
+use App\Services\Admin\ShopInsights;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -136,6 +138,28 @@ class UserResource extends Resource
                     Infolists\Components\TextEntry::make('created_at')->label('Ro\'yxatdan o\'tgan')->dateTime(),
                     Infolists\Components\TextEntry::make('updated_at')->label('Yangilangan')->since(),
                     Infolists\Components\TextEntry::make('id')->label('ID')->copyable(),
+                ]),
+            Infolists\Components\Section::make('Do\'konlari')
+                ->description('Batafsil — pastdagi "Do\'konlar" ro\'yxatidan do\'konni bosing.')
+                ->columns(5)
+                ->schema([
+                    Infolists\Components\TextEntry::make('shops_total')
+                        ->label('Do\'konlar')
+                        ->state(fn (User $r) => ShopInsights::forUser($r)['shops']),
+                    Infolists\Components\TextEntry::make('shops_owned')
+                        ->label('Egasi bo\'lgan')
+                        ->state(fn (User $r) => ShopInsights::forUser($r)['owned']),
+                    Infolists\Components\TextEntry::make('shops_entries')
+                        ->label('Ishlab chiqarish yozuvlari')
+                        ->state(fn (User $r) => ShopInsights::number(ShopInsights::forUser($r)['entries'])),
+                    Infolists\Components\TextEntry::make('shops_produced')
+                        ->label('Jami ishlab chiqarilgan')
+                        ->state(fn (User $r) => ShopInsights::number(ShopInsights::forUser($r)['produced']) . ' dona'),
+                    Infolists\Components\TextEntry::make('shops_last')
+                        ->label('Oxirgi faollik')
+                        ->state(fn (User $r) => ShopInsights::forUser($r)['last_date'])
+                        ->date('d.m.Y')
+                        ->placeholder('Hali ishlatmagan'),
                 ]),
         ]);
     }
@@ -307,6 +331,7 @@ class UserResource extends Resource
                             ->success()
                             ->send();
                     }),
+                DirectMessage::configure(Tables\Actions\Action::make('message'), fn (User $user) => $user),
                 Tables\Actions\Action::make('unlinkTelegram')
                     ->label('Telegramni uzish')
                     ->icon('heroicon-o-link-slash')

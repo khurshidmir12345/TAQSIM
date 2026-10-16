@@ -50,4 +50,18 @@ class Ingredient extends Model
     {
         return $this->belongsTo(MeasurementUnit::class);
     }
+
+    /** `ingredients.unit` eski satr ustuni — o'lchov birligi kodidan olinadi. */
+    public static function unitFromMeasurementCode(string $code): string
+    {
+        return match ($code) {
+            'kg', 'KG' => 'kg',
+            'g', 'G' => 'gram',
+            'l', 'LITR' => 'litr',
+            'ml', 'ML' => 'ml',
+            'm', 'METR' => 'metr',
+            'ta', 'DONA' => 'dona',
+            default => 'kg',
+        };
+    }
 }

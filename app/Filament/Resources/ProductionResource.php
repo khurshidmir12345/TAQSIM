@@ -18,6 +18,9 @@ class ProductionResource extends Resource
 
     protected static ?string $navigationGroup = 'Operatsiyalar';
 
+    // Sidebarda ko'rsatilmaydi: bu ma'lumotlar do'kon sahifasi ichida chiqadi.
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationLabel = 'Ishlab chiqarish';
 
     protected static ?string $modelLabel = 'Ishlab chiqarish';

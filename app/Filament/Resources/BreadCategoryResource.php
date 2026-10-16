@@ -20,6 +20,9 @@ class BreadCategoryResource extends Resource
 
     protected static ?string $navigationGroup = 'Katalog';
 
+    // Sidebarda ko'rsatilmaydi: bu ma'lumotlar do'kon sahifasi ichida chiqadi.
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationLabel = 'Mahsulotlar';
 
     protected static ?string $modelLabel = 'Mahsulot';

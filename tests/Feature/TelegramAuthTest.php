@@ -192,6 +192,29 @@ class TelegramAuthTest extends TestCase
         ]);
     }
 
+    public function test_new_telegram_user_is_announced_to_admin_group(): void
+    {
+        Queue::fake([\App\Jobs\SendAdminTelegramMessage::class, SendTelegramTutorial::class]);
+        $bot = $this->makeBot();
+        $this->fakeTelegramService()->shouldReceive('sendWithInlineButton')->andReturn(true);
+
+        TelegramAuthSession::create([
+            'session_token' => 'sess-notice',
+            'type' => 'login',
+            'client_platform' => 'mobile',
+            'telegram_chat_id' => 555000444,
+            'status' => 'pending',
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        $this->postWebhookContact($bot->token, 555000444, fromId: 444, contactUserId: 444)->assertOk();
+
+        Queue::assertPushed(
+            \App\Jobs\SendAdminTelegramMessage::class,
+            fn ($job) => str_contains((string) (new \ReflectionProperty($job, 'text'))->getValue($job), 'Telegram'),
+        );
+    }
+
     public function test_contact_completes_web_login_and_returns_web_app_url(): void
     {
         $bot = $this->makeBot();

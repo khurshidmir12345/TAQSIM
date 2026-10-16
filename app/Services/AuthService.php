@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuthProvider;
 use App\Exceptions\ActiveUserPurgeForbiddenException;
 use App\Exceptions\InvalidRegistrationCodeException;
 use App\Exceptions\PhoneAlreadyRegisteredException;
@@ -51,13 +52,16 @@ class AuthService
                     $this->purgeLegacyAccount($existing);
                 }
 
-                return User::create([
+                $user = User::create([
                     'name' => $name,
                     'phone' => $phone,
                     'password' => $password,
                     'is_accepted_policy' => true,
                     'phone_verified_at' => now(),
                 ]);
+                app(RegistrationNotifier::class)->notifyRegistered($user, AuthProvider::Phone);
+
+                return $user;
             });
         } catch (PhoneAlreadyRegisteredException|InvalidRegistrationCodeException $e) {
             throw $e;
@@ -104,11 +108,14 @@ class AuthService
                     $this->purgeLegacyAccount($existing);
                 }
 
-                return [User::create([
+                $user = User::create([
                     'phone' => $phone,
                     'is_accepted_policy' => true,
                     'phone_verified_at' => now(),
-                ]), true];
+                ]);
+                app(RegistrationNotifier::class)->notifyRegistered($user, AuthProvider::Phone);
+
+                return [$user, true];
             });
         } catch (QueryException $e) {
             // Ikki so'rov bir vaqtda yaratmoqchi bo'lsa — ikkinchisi tayyorini oladi.

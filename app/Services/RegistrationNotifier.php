@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuthProvider;
 use App\Jobs\SendAdminTelegramMessage;
 use App\Models\Shop;
 use App\Models\User;
@@ -32,6 +33,48 @@ class RegistrationNotifier
         } catch (\Throwable $e) {
             Log::warning('RegistrationNotifier failed', [
                 'phone' => $phone,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Yangi foydalanuvchi yaratildi — qaysi yo'l bilan bo'lsa ham (telefon,
+     * Google, Apple, Telegram). Avval faqat SMS kod so'ralgani haqida xabar
+     * kelardi; Google/Apple/Telegram orqali kelganlar ko'rinmay qolardi.
+     *
+     * Tranzaksiya muvaffaqiyatli tugagachgina yuboriladi (`afterCommit`).
+     */
+    public function notifyRegistered(User $user, AuthProvider $method): void
+    {
+        try {
+            $label = match ($method) {
+                AuthProvider::Phone => "\u{1F4F1} Telefon (SMS kod)",
+                AuthProvider::Google => "\u{1F310} Google",
+                AuthProvider::Apple => "\u{1F34F} Apple",
+                AuthProvider::Telegram => "\u{2708}\u{FE0F} Telegram",
+            };
+
+            $lines = ["\u{1F389} <b>TAQSEEM — yangi foydalanuvchi</b>", '', "Usul: <b>{$label}</b>"];
+            if ($user->name) {
+                $lines[] = "\u{1F464} Ism: <b>{$this->esc($user->name)}</b>";
+            }
+            if ($user->phone) {
+                $lines[] = "\u{260E}\u{FE0F} Telefon: <code>{$this->esc($user->phone)}</code>";
+            }
+            if ($user->email) {
+                $lines[] = "\u{2709}\u{FE0F} Email: <code>{$this->esc($user->email)}</code>";
+            }
+            if ($user->telegram_username) {
+                $lines[] = "\u{1F4AC} Telegram: @{$this->esc($user->telegram_username)}";
+            }
+            $lines[] = "\u{1F465} Jami foydalanuvchilar: " . User::query()->count();
+            $lines[] = "\u{1F551} " . now()->format('d.m.Y H:i');
+
+            SendAdminTelegramMessage::dispatch(implode("\n", $lines))->afterCommit();
+        } catch (\Throwable $e) {
+            Log::warning('RegistrationNotifier registered failed', [
+                'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
         }

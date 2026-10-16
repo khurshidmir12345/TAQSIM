@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuthProvider;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendTelegramTutorial;
 use App\Models\SystemBot;
 use App\Models\TelegramAuthSession;
 use App\Models\User;
 use App\Models\UserDevice;
+use App\Services\RegistrationNotifier;
 use App\Services\SupportRelayService;
 use App\Services\TelegramBotService;
 use Illuminate\Http\JsonResponse;
@@ -287,6 +289,7 @@ class TelegramWebhookController extends Controller
                     'is_accepted_policy' => true,
                     'phone_verified_at' => now(),
                 ]);
+                app(RegistrationNotifier::class)->notifyRegistered($user, AuthProvider::Telegram);
             } else {
                 $user->update([
                     'telegram_chat_id' => $chatId,

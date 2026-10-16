@@ -287,7 +287,10 @@ class SocialAuthService
             $attributes[$providerColumn] = $subject;
         }
 
-        return User::create($attributes);
+        $user = User::create($attributes);
+        app(RegistrationNotifier::class)->notifyRegistered($user, $provider);
+
+        return $user;
     }
 
     /**

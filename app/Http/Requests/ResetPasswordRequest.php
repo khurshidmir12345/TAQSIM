@@ -17,7 +17,7 @@ class ResetPasswordRequest extends FormRequest
         return [
             'phone' => ['required', 'string', 'max:32'],
             'code' => ['required', 'string', 'max:8'],
-            'password' => ['required', 'string', 'min:6', 'max:64', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'max:64', 'confirmed'],
         ];
     }
 }

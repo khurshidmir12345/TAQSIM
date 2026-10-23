@@ -112,6 +112,18 @@ class User extends Authenticatable implements FilamentUser
         return $this->access_source === 'paid' ? 'paid' : 'trial';
     }
 
+    /**
+     * Profildagi "Tasdiqlangan hisob" belgisi: admin pullik ochgan va muddati
+     * tugamagan. Sinov muddatidagilarga chiqmaydi.
+     */
+    public function isVerified(): bool
+    {
+        return (bool) config('access.verified_badge')
+            && $this->access_source === 'paid'
+            && $this->access_until !== null
+            && $this->access_until->isFuture();
+    }
+
     /** Muddat tugashiga necha kun qoldi (o'tib ketgan bo'lsa manfiy). */
     public function accessDaysLeft(): ?int
     {

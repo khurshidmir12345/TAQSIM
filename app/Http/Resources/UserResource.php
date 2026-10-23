@@ -31,6 +31,9 @@ class UserResource extends JsonResource
             // Kod bilan kirgan, parolni hali qo'ymagan — ilova har kirganda
             // parol o'rnatish ekranini ko'rsatadi.
             'must_set_password' => $this->must_set_password_at !== null,
+            // Profildagi ✓ belgisi. Nomi ataylab betaraf — tarif yoki
+            // muddat ilovaga uzatilmaydi.
+            'is_verified' => $this->isVerified(),
             'email_verified_at' => $this->email_verified_at,
             'phone_verified_at' => $this->phone_verified_at,
             'created_at' => $this->created_at,

@@ -83,6 +83,20 @@ return [
 
     'contact' => env('ACCESS_CONTACT', '@taqseem_admin_bot'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | "Tasdiqlangan hisob" belgisi
+    |--------------------------------------------------------------------------
+    |
+    | Pul to'lagan foydalanuvchi profilida ✓ belgisi chiqadi. Ilovaga faqat
+    | `is_verified` boradi — tarif, muddat va narx haqida hech narsa yo'q
+    | (App Store 3.1.3(f)). Ilova tekshiruvida savol chiqsa, deploysiz
+    | o'chiriladi.
+    |
+    */
+
+    'verified_badge' => (bool) env('VERIFIED_BADGE_ENABLED', true),
+
     // Telegram ulangan zahoti yuboriladigan video qo'llanma (kanaldagi post).
     'tutorial_video_url' => env('TUTORIAL_VIDEO_URL', 'https://t.me/taqseem_rasmiy/23'),
 

@@ -19,7 +19,9 @@ class RecipeController extends BaseShopController
 
         $recipes = $shop->recipes()
             ->with(['breadCategory', 'measurementUnit', 'recipeIngredients.ingredient'])
-            ->orderBy('name')
+            // Yangi qo'shilgani tepada (ilgari nom bo'yicha — yangisi pastda qolardi).
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
 
         return $this->success([

@@ -20,7 +20,10 @@ class BreadCategoryController extends BaseShopController
         $query = $shop->breadCategories()->getQuery()->with(['currency', 'measurementUnit']);
 
         $this->applyFilters($query, $request, ['is_active']);
-        $this->applySorting($query, $request, 'sort_order', 'asc');
+        // Yangi qo'shilgani tepada. Bir soniyada qo'shilganlar (masalan namuna
+        // katalog) uchun id ham — UUID v7 vaqt bo'yicha o'sadi.
+        $this->applySorting($query, $request, 'created_at', 'desc');
+        $query->orderByDesc('id');
 
         if ($request->boolean('paginate', false)) {
             $perPage = min((int) $request->query('per_page', 20), 100);

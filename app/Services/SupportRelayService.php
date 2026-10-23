@@ -24,6 +24,12 @@ class SupportRelayService
     /** Shu muddat ichida yangi yozuv bo'lmasa, foydalanuvchiga tasdiq yuboriladi. */
     private const ACK_WINDOW_HOURS = 24;
 
+    /** Admin javobi oldidan foydalanuvchi ko'radigan sarlavha. */
+    private const REPLY_HEADER = "\u{1F4AC} <b>Qo'llab-quvvatlash xizmati:</b>";
+
+    /** Telegram media izohi chegarasi. */
+    private const CAPTION_LIMIT = 1024;
+
     public function __construct(
         private readonly TelegramBotService $telegram,
     ) {}
@@ -117,22 +123,13 @@ class SupportRelayService
 
         $text = trim((string) ($message['text'] ?? ''));
 
-        if ($text === '') {
-            $this->telegram->replyToMessage(
+        $sent = $text !== ''
+            ? $this->telegram->sendMessage(
                 $bot->token,
-                (int) $message['chat']['id'],
-                (int) $message['message_id'],
-                "\u{26A0}\u{FE0F} Hozircha faqat matnli javob yuborish mumkin.",
-            );
-
-            return false;
-        }
-
-        $sent = $this->telegram->sendMessage(
-            $bot->token,
-            (int) $thread->user_chat_id,
-            "\u{1F4AC} <b>Qo'llab-quvvatlash xizmati:</b>\n\n".$this->esc($text),
-        );
+                (int) $thread->user_chat_id,
+                self::REPLY_HEADER."\n\n".$this->esc($text),
+            )
+            : $this->relayMedia($bot, $message, (int) $thread->user_chat_id);
 
         // Adminlar javob yetib borgan-bormaganini ko'rib tursin.
         $this->telegram->replyToMessage(
@@ -145,6 +142,35 @@ class SupportRelayService
         );
 
         return $sent;
+    }
+
+    /**
+     * Admin javobi matn bo'lmasa (ovoz, video, rasm, fayl, dumaloq video,
+     * stiker…) — nusxasi foydalanuvchiga ketadi. Avval faqat matn ketardi.
+     *
+     * Izoh qo'yish mumkin bo'lgan turlarda sarlavha izohga qo'shiladi; qolganlarida
+     * (yoki izoh juda uzun bo'lsa) sarlavha alohida xabar bo'lib oldin ketadi.
+     */
+    private function relayMedia(SystemBot $bot, array $message, int $userChatId): bool
+    {
+        $groupChatId = (int) $message['chat']['id'];
+        $messageId = (int) $message['message_id'];
+
+        $captionable = array_intersect(
+            ['photo', 'video', 'voice', 'audio', 'document', 'animation'],
+            array_keys($message),
+        ) !== [];
+
+        $original = trim((string) ($message['caption'] ?? ''));
+        $caption = self::REPLY_HEADER.($original !== '' ? "\n\n".$this->esc($original) : '');
+
+        if ($captionable && mb_strlen($caption) <= self::CAPTION_LIMIT) {
+            return $this->telegram->copyMessage($bot->token, $userChatId, $groupChatId, $messageId, $caption);
+        }
+
+        $this->telegram->sendMessage($bot->token, $userChatId, self::REPLY_HEADER);
+
+        return $this->telegram->copyMessage($bot->token, $userChatId, $groupChatId, $messageId);
     }
 
     /**

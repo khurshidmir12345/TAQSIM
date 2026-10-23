@@ -81,6 +81,45 @@ class TelegramBotService
     }
 
     /**
+     * Xabarning nusxasini yuboradi (matn, ovoz, video, rasm, fayl, stiker —
+     * hammasi). Forward'dan farqli: "kimdan" ko'rinmaydi.
+     *
+     * [caption] berilsa — media izohi shu bilan almashtiriladi (HTML).
+     */
+    public function copyMessage(
+        string $token,
+        int $toChatId,
+        int $fromChatId,
+        int $messageId,
+        ?string $caption = null,
+    ): bool {
+        $payload = [
+            'chat_id' => $toChatId,
+            'from_chat_id' => $fromChatId,
+            'message_id' => $messageId,
+        ];
+
+        if ($caption !== null) {
+            $payload['caption'] = $caption;
+            $payload['parse_mode'] = 'HTML';
+        }
+
+        $response = $this->http()->post(self::API_BASE.$token.'/copyMessage', $payload);
+
+        if (! $response->successful()) {
+            Log::error('Telegram copyMessage failed', [
+                'to' => $toChatId,
+                'from' => $fromChatId,
+                'response' => $response->body(),
+            ]);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Mavjud xabarga reply qilib javob yuboradi.
      */
     public function replyToMessage(string $token, int $chatId, int $replyToMessageId, string $text): bool

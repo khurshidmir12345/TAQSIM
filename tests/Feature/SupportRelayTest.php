@@ -132,6 +132,103 @@ class SupportRelayTest extends TestCase
             ->assertOk();
     }
 
+    /** Admin guruhda ovoz/video/rasm bilan reply qildi (matnsiz). */
+    private function groupMediaReply(array $media): array
+    {
+        return [
+            'message' => array_merge([
+                'message_id' => 9002,
+                'from' => ['id' => self::ADMIN_ID, 'first_name' => 'Admin'],
+                'chat' => ['id' => self::SUPPORT_GROUP, 'type' => 'supergroup'],
+                'reply_to_message' => ['message_id' => 8001],
+            ], $media),
+        ];
+    }
+
+    private function makeThread(SystemBot $bot): void
+    {
+        SupportThread::create([
+            'system_bot_id' => $bot->id,
+            'group_chat_id' => (string) self::SUPPORT_GROUP,
+            'group_message_id' => 8001,
+            'user_chat_id' => (string) self::USER_CHAT,
+        ]);
+    }
+
+    public function test_admin_voice_reply_is_copied_to_user_with_header(): void
+    {
+        $bot = $this->makeBot();
+        $this->makeSupportGroup($bot);
+        $this->makeThread($bot);
+
+        $this->mock(TelegramBotService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('getChatAdministrators')->andReturn([self::ADMIN_ID]);
+            $mock->shouldReceive('copyMessage')
+                ->once()
+                ->withArgs(fn (string $token, int $to, int $from, int $id, ?string $caption): bool => $to === self::USER_CHAT
+                    && $from === self::SUPPORT_GROUP
+                    && $id === 9002
+                    && str_contains((string) $caption, "Qo'llab-quvvatlash xizmati"))
+                ->andReturn(true);
+            $mock->shouldNotReceive('sendMessage');
+            $mock->shouldReceive('replyToMessage')
+                ->once()
+                ->withArgs(fn ($t, $c, $r, string $text): bool => str_contains($text, 'yuborildi'))
+                ->andReturn(true);
+        });
+
+        $this->postJson('/api/telegram/webhook/'.self::TOKEN, $this->groupMediaReply([
+            'voice' => ['file_id' => 'voice-1', 'duration' => 4],
+        ]))->assertOk();
+    }
+
+    public function test_admin_photo_caption_is_kept_and_escaped(): void
+    {
+        $bot = $this->makeBot();
+        $this->makeSupportGroup($bot);
+        $this->makeThread($bot);
+
+        $this->mock(TelegramBotService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('getChatAdministrators')->andReturn([self::ADMIN_ID]);
+            $mock->shouldReceive('copyMessage')
+                ->once()
+                ->withArgs(fn ($t, $to, $from, $id, ?string $caption): bool => str_contains((string) $caption, 'Shu yerni bosing &lt;3'))
+                ->andReturn(true);
+            $mock->shouldReceive('replyToMessage')->once()->andReturn(true);
+        });
+
+        $this->postJson('/api/telegram/webhook/'.self::TOKEN, $this->groupMediaReply([
+            'photo' => [['file_id' => 'p1', 'width' => 90, 'height' => 90]],
+            'caption' => 'Shu yerni bosing <3',
+        ]))->assertOk();
+    }
+
+    public function test_admin_video_note_gets_header_then_copy(): void
+    {
+        $bot = $this->makeBot();
+        $this->makeSupportGroup($bot);
+        $this->makeThread($bot);
+
+        $this->mock(TelegramBotService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('getChatAdministrators')->andReturn([self::ADMIN_ID]);
+            // Dumaloq videoga izoh qo'yib bo'lmaydi — sarlavha alohida.
+            $mock->shouldReceive('sendMessage')
+                ->once()
+                ->withArgs(fn ($t, int $chatId, string $text): bool => $chatId === self::USER_CHAT
+                    && str_contains($text, "Qo'llab-quvvatlash xizmati"))
+                ->andReturn(true);
+            $mock->shouldReceive('copyMessage')
+                ->once()
+                ->withArgs(fn ($t, $to, $from, $id, $caption = null): bool => $to === self::USER_CHAT && $caption === null)
+                ->andReturn(true);
+            $mock->shouldReceive('replyToMessage')->once()->andReturn(true);
+        });
+
+        $this->postJson('/api/telegram/webhook/'.self::TOKEN, $this->groupMediaReply([
+            'video_note' => ['file_id' => 'vn-1', 'length' => 240, 'duration' => 5],
+        ]))->assertOk();
+    }
+
     public function test_non_admin_reply_is_ignored(): void
     {
         $bot = $this->makeBot();

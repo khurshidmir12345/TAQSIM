@@ -28,9 +28,14 @@ class RecipeIngredient extends Model
         return $this->belongsTo(Recipe::class);
     }
 
+    /**
+     * O'chirilgan xom ashyo ham qaytadi — retsept unga hali bog'langan bo'lishi
+     * mumkin. Aks holda tannarx null'dan narx o'qib yiqilardi va retseptlar
+     * ro'yxati butunlay ochilmasdi (prodda 13 foydalanuvchida bo'lgan).
+     */
     public function ingredient(): BelongsTo
     {
-        return $this->belongsTo(Ingredient::class);
+        return $this->belongsTo(Ingredient::class)->withTrashed();
     }
 
     public function lineCost(): float

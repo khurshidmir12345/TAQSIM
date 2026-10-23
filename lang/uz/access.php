@@ -35,4 +35,18 @@ Statistika, Buyurtmalar va Xodimlar bo'limlaridan to'liq foydalaning — hozirch
 :pricing
 
 Premium olish va murojaat uchun admin botga yozing 👉 :contact",
+
+    // Muddati tugaganlarga (`access:promo --expired-only`). Narxlar shu yerda
+    // qisqa yozilgan — :pricing bloki bu xabar uchun uzunlik qiladi.
+    'promo_expired' => "⏳ <b>Taqseem: foydalanish muddatingiz tugadi</b>
+
+Statistika, Buyurtmalar va Xodimlar yopildi. Qolgan bo'limlar bepul ishlayveradi.
+
+Barcha imkoniyatlardan to'liq foydalanish uchun Premium oling:
+
+📅 Oylik: <s>39 000 so'm</s> → <b>17 000 so'm/oy</b> (−56%)
+🔥 Yillik: <s>468 000 so'm</s> → <b>150 000 so'm/yil</b> (−68%, oyiga ~12 500 so'm)
+
+💳 To'lov kartaga qilinadi — admin tasdiqlagach Premium darhol yoqiladi.
+👉 Olish uchun yozing: :contact",
 ];

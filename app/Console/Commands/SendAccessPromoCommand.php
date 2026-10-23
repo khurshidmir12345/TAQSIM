@@ -6,6 +6,7 @@ use App\Models\SystemBot;
 use App\Models\User;
 use App\Services\TelegramBotService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -67,11 +68,19 @@ class SendAccessPromoCommand extends Command
             return self::SUCCESS;
         }
 
+        // Muddati tugaganlarga alohida matn: nima yopilgani va to'lov tartibi.
+        $key = $this->option('expired-only') ? 'access.promo_expired' : 'access.promo';
+
         $sent = 0;
         $failed = 0;
         foreach ($users as $user) {
             $locale = $user->messageLocale();
-            $text = __('access.promo', [
+            // Matn hamma tilda bo'lmasligi mumkin — o'zbekchaga tushadi.
+            if (! Lang::has($key, $locale, false)) {
+                $locale = 'uz';
+            }
+
+            $text = __($key, [
                 'pricing' => __('access.pricing', [], $locale),
                 'contact' => (string) config('access.contact'),
             ], $locale);

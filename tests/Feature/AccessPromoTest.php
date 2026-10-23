@@ -55,4 +55,26 @@ class AccessPromoTest extends TestCase
             && str_contains($r['text'], '@taqseem_admin_bot') && $r['parse_mode'] === 'HTML');
         Http::assertSent(fn ($r) => $r['chat_id'] === 222 && str_contains($r['text'], 'Premium'));
     }
+
+    public function test_expired_only_gets_expired_text_with_card_payment_in_any_locale(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
+        SystemBot::create(['name' => 'Register', 'type' => 'register', 'token' => 'tok', 'username' => 'bot', 'is_active' => true]);
+
+        $this->owner(111, 'uz')->update(['access_until' => now()->subDay()]);
+        $this->owner(222, 'ru')->update(['access_until' => now()->subDay()]);
+        $this->owner(333, 'uz')->update(['access_until' => now()->addWeek()]);
+
+        $this->artisan('access:promo', ['--expired-only' => true, '--send' => true])->assertSuccessful();
+
+        Http::assertSentCount(2);
+        // Ruscha matn yo'q — o'zbekchaga tushadi, kalit nomi ketib qolmaydi.
+        foreach ([111, 222] as $chatId) {
+            Http::assertSent(fn ($r) => $r['chat_id'] === $chatId
+                && str_contains($r['text'], 'muddatingiz tugadi')
+                && str_contains($r['text'], 'kartaga')
+                && str_contains($r['text'], '17 000')
+                && str_contains($r['text'], '@taqseem_admin_bot'));
+        }
+    }
 }

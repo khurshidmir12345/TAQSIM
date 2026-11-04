@@ -72,6 +72,10 @@ return [
     'recipe' => [
         'duplicate_bread_category' => 'A recipe for this product type already exists.',
     ],
+    'production' => [
+        'items_empty' => 'Enter the quantity of at least one product.',
+        'item_has_returns' => 'This product has a return recorded — it can\'t be removed from the batch. Delete the return first.',
+    ],
 
     'employees' => [
         'code_sent' => 'Verification code sent to the employee phone number.',

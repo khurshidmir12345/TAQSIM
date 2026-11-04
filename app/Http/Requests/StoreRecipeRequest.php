@@ -3,11 +3,15 @@
 namespace App\Http\Requests;
 
 use App\Models\MeasurementUnit;
+use App\Models\Recipe;
+use App\Http\Requests\Concerns\ValidatesRecipeOutputs;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreRecipeRequest extends FormRequest
 {
+    use ValidatesRecipeOutputs;
+
     public function authorize(): bool
     {
         return true;
@@ -16,10 +20,14 @@ class StoreRecipeRequest extends FormRequest
     public function rules(): array
     {
         $shop = $this->route('shop');
+        $isMix = $this->input('kind') === Recipe::KIND_MIX;
 
         return [
+            // single — bitta mahsulot retsepti (eski ilova ham shu); mix — aralash partiya.
+            'kind' => ['sometimes', Rule::in([Recipe::KIND_SINGLE, Recipe::KIND_MIX])],
+            // Aralash partiyada asosiy mahsulot yo'q — mahsulotlar `outputs` da.
             'bread_category_id' => [
-                'required',
+                $isMix ? 'prohibited' : 'required',
                 'uuid',
                 Rule::exists('bread_categories', 'id')->where('shop_id', $shop->id),
                 // Faqat aktiv (soft-deleted bo'lmagan) retseptlar orasida takrorlanishni
@@ -43,9 +51,10 @@ class StoreRecipeRequest extends FormRequest
                 }),
             ],
             'name' => ['required', 'string', 'max:255'],
-            'output_quantity' => ['required', 'integer', 'min:1'],
+            'output_quantity' => [$isMix ? 'nullable' : 'required', 'integer', 'min:1'],
             'ingredients' => ['required', 'array', 'min:1'],
             'ingredients.*.ingredient_id' => ['required', 'uuid', 'exists:ingredients,id'],
+            ...($isMix ? $this->mixOutputRules($shop, required: true) : ['outputs' => ['prohibited']]),
             'ingredients.*.quantity' => ['required', 'numeric', 'min:0.001'],
         ];
     }

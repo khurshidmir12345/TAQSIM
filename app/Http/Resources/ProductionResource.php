@@ -13,6 +13,8 @@ class ProductionResource extends JsonResource
             'id' => $this->id,
             'shop_id' => $this->shop_id,
             'recipe_id' => $this->recipe_id,
+            // Bir partiyadan chiqqan mahsulotlar umumiy batch_id bilan; oddiy chiqimda null.
+            'batch_id' => $this->batch_id,
             'bread_category_id' => $this->bread_category_id,
             'bread_category' => new BreadCategoryResource($this->whenLoaded('breadCategory')),
             'recipe' => new RecipeResource($this->whenLoaded('recipe')),

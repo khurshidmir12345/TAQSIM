@@ -13,8 +13,19 @@ class Recipe extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
+    /** Bitta mahsulot retsepti — har mahsulotga bittadan. */
+    public const KIND_SINGLE = 'single';
+
+    /** Aralash partiya: o'z xom ashyosi, bir nechta (istalgan) mahsulot. */
+    public const KIND_MIX = 'mix';
+
+    protected $attributes = [
+        'kind' => self::KIND_SINGLE,
+    ];
+
     protected $fillable = [
         'shop_id',
+        'kind',
         'bread_category_id',
         'measurement_unit_id',
         'name',
@@ -28,6 +39,11 @@ class Recipe extends Model
             'output_quantity' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function isMix(): bool
+    {
+        return $this->kind === self::KIND_MIX;
     }
 
     public function shop(): BelongsTo
@@ -48,6 +64,15 @@ class Recipe extends Model
     public function measurementUnit(): BelongsTo
     {
         return $this->belongsTo(MeasurementUnit::class);
+    }
+
+    /**
+     * 1 partiyadan chiqadigan mahsulotlar. Oddiy retseptda bitta qator
+     * (= bread_category_id + output_quantity).
+     */
+    public function outputs(): HasMany
+    {
+        return $this->hasMany(RecipeOutput::class)->orderBy('sort_order')->orderBy('created_at');
     }
 
     public function recipeIngredients(): HasMany

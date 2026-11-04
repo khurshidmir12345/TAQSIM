@@ -15,9 +15,14 @@ class StoreProductionRequest extends FormRequest
     {
         return [
             'recipe_id' => ['required', 'uuid', 'exists:recipes,id'],
-            'bread_category_id' => ['required', 'uuid', 'exists:bread_categories,id'],
+            // Eski ilova: bitta mahsulot. Yangi ilova: `items` (bir partiyadan
+            // bir nechta mahsulot) — bunda bread_category_id shart emas.
+            'bread_category_id' => ['required_without:items', 'uuid', 'exists:bread_categories,id'],
             'date' => ['required', 'date'],
             'batch_count' => ['required', 'numeric', 'min:0.1'],
+            'items' => ['sometimes', 'array', 'min:1', 'max:30'],
+            'items.*.bread_category_id' => ['required_with:items', 'uuid', 'distinct', 'exists:bread_categories,id'],
+            'items.*.quantity' => ['required_with:items', 'integer', 'min:0', 'max:10000000'],
         ];
     }
 }

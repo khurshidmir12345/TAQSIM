@@ -69,6 +69,10 @@ return [
     'recipe' => [
         'duplicate_bread_category' => 'Bu ürün kategorisi için tarif zaten mevcut.',
     ],
+    'production' => [
+        'items_empty' => 'En az bir ürünün miktarını girin.',
+        'item_has_returns' => 'Bu ürün için iade kaydı var — partiden çıkarılamaz. Önce iadeyi silin.',
+    ],
 
     'employees' => [
         'code_sent' => 'Doğrulama kodu çalışanın numarasına gönderildi.',

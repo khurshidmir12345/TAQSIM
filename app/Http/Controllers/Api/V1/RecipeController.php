@@ -13,12 +13,14 @@ use Illuminate\Support\Facades\DB;
 
 class RecipeController extends BaseShopController
 {
+    private const RELATIONS = ['breadCategory', 'measurementUnit', 'outputs.breadCategory', 'recipeIngredients.ingredient'];
+
     public function index(Request $request, Shop $shop): JsonResponse
     {
         $this->authorizeShop($request, $shop);
 
         $recipes = $shop->recipes()
-            ->with(['breadCategory', 'measurementUnit', 'recipeIngredients.ingredient'])
+            ->with(self::RELATIONS)
             // Yangi qo'shilgani tepada (ilgari nom bo'yicha — yangisi pastda qolardi).
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -41,21 +43,32 @@ class RecipeController extends BaseShopController
             ->toArray();
         $data['ingredients'] = $uniqueIngredients;
 
-        $recipe = DB::transaction(function () use ($shop, $data) {
+        $isMix = ($data['kind'] ?? Recipe::KIND_SINGLE) === Recipe::KIND_MIX;
+        $outputs = $this->normalizeOutputs($data);
+        // Aralash partiyada asosiy mahsulot yo'q; output_quantity — jami chiqim.
+        $data['bread_category_id'] = $isMix ? null : $outputs[0]['bread_category_id'];
+        $data['output_quantity'] = array_sum(array_column($outputs, 'quantity'));
+
+        $recipe = DB::transaction(function () use ($shop, $data, $outputs, $isMix) {
             // Agar shu `bread_category_id` uchun ilgari soft-deleted retsept bor
             // bo'lsa — uni butunlay tozalaymiz. Shunda DB'da orfan yozuvlar
             // qolib ketmaydi va kelajakdagi tekshiruvlar toza bo'ladi.
-            $this->purgeTrashedRecipesFor(
-                shopId: $shop->id,
-                breadCategoryId: $data['bread_category_id'],
-            );
+            if (! $isMix) {
+                $this->purgeTrashedRecipesFor(
+                    shopId: $shop->id,
+                    breadCategoryId: $data['bread_category_id'],
+                );
+            }
 
             $recipe = $shop->recipes()->create([
+                'kind' => $isMix ? Recipe::KIND_MIX : Recipe::KIND_SINGLE,
                 'name' => $data['name'],
                 'bread_category_id' => $data['bread_category_id'],
                 'measurement_unit_id' => $data['measurement_unit_id'],
                 'output_quantity' => $data['output_quantity'],
             ]);
+
+            $this->syncOutputs($recipe, $outputs);
 
             foreach ($data['ingredients'] as $item) {
                 $recipe->recipeIngredients()->create([
@@ -67,7 +80,7 @@ class RecipeController extends BaseShopController
             return $recipe;
         });
 
-        $recipe->load(['breadCategory', 'measurementUnit', 'recipeIngredients.ingredient']);
+        $recipe->load(self::RELATIONS);
 
         return $this->created([
             'recipe' => new RecipeResource($recipe),
@@ -78,7 +91,7 @@ class RecipeController extends BaseShopController
     {
         $this->authorizeShop($request, $shop);
 
-        $recipe->load(['breadCategory', 'measurementUnit', 'recipeIngredients.ingredient']);
+        $recipe->load(self::RELATIONS);
 
         return $this->success([
             'recipe' => new RecipeResource($recipe),
@@ -91,8 +104,32 @@ class RecipeController extends BaseShopController
 
         $data = $request->validated();
 
-        DB::transaction(function () use ($recipe, $data) {
-            $recipe->update(collect($data)->except(['ingredients'])->toArray());
+        $outputs = null;
+        if ($recipe->isMix()) {
+            // Aralash partiya: mahsulotlar faqat `outputs` orqali o'zgaradi.
+            // Eski ilova yuborgan output_quantity e'tiborsiz — taqsimot buzilmasin.
+            unset($data['output_quantity']);
+            if (isset($data['outputs'])) {
+                $outputs = $this->normalizeOutputs($data);
+                $data['output_quantity'] = array_sum(array_column($outputs, 'quantity'));
+            }
+        } elseif (isset($data['bread_category_id']) || isset($data['output_quantity'])) {
+            $outputs = [[
+                'bread_category_id' => $data['bread_category_id'] ?? $recipe->bread_category_id,
+                'quantity' => (int) ($data['output_quantity'] ?? $recipe->output_quantity),
+            ]];
+        }
+
+        if (isset($data['bread_category_id']) && $data['bread_category_id'] !== $recipe->bread_category_id) {
+            $this->purgeTrashedRecipesFor($shop->id, $data['bread_category_id']);
+        }
+
+        DB::transaction(function () use ($recipe, $data, $outputs) {
+            $recipe->update(collect($data)->except(['ingredients', 'outputs'])->toArray());
+
+            if ($outputs !== null) {
+                $this->syncOutputs($recipe, $outputs);
+            }
 
             if (isset($data['ingredients'])) {
                 $recipe->recipeIngredients()->delete();
@@ -105,7 +142,7 @@ class RecipeController extends BaseShopController
             }
         });
 
-        $recipe->load(['breadCategory', 'measurementUnit', 'recipeIngredients.ingredient']);
+        $recipe->load(self::RELATIONS);
 
         return $this->success([
             'recipe' => new RecipeResource($recipe),
@@ -119,6 +156,38 @@ class RecipeController extends BaseShopController
         $recipe->delete();
 
         return $this->deleted();
+    }
+
+    /**
+     * `outputs` yoki eski `bread_category_id` + `output_quantity` dan
+     * yagona ro'yxat. Birinchisi — asosiy mahsulot.
+     *
+     * @param  array<string, mixed>  $data
+     * @return list<array{bread_category_id: string, quantity: int}>
+     */
+    private function normalizeOutputs(array $data): array
+    {
+        if (! empty($data['outputs'])) {
+            return array_values(array_map(fn (array $o) => [
+                'bread_category_id' => (string) $o['bread_category_id'],
+                'quantity' => (int) $o['quantity'],
+            ], $data['outputs']));
+        }
+
+        return [[
+            'bread_category_id' => (string) $data['bread_category_id'],
+            'quantity' => (int) $data['output_quantity'],
+        ]];
+    }
+
+    /** @param  list<array{bread_category_id: string, quantity: int}>  $outputs */
+    private function syncOutputs(Recipe $recipe, array $outputs): void
+    {
+        $recipe->outputs()->delete();
+        foreach ($outputs as $i => $o) {
+            $recipe->outputs()->create($o + ['sort_order' => $i]);
+        }
+        $recipe->unsetRelation('outputs');
     }
 
     /**

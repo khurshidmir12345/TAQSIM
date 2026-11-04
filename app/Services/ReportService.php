@@ -137,7 +137,8 @@ class ReportService
                 'total_flour_kg' => (float) $productions->sum('flour_used_kg'),
                 'total_bread' => $totalBread,
                 'ingredient_cost' => $ingredientCost,
-                'count' => $productions->count(),
+                // Bir partiyadan bir nechta mahsulot — bitta chiqim sifatida.
+                'count' => $this->batchCount($productions),
             ],
             // total_amount = tushum (brutto chiqim narxi) − vozvrat summasi (netto sotuv)
             'sales' => [
@@ -342,7 +343,7 @@ class ReportService
 
         return [
             'period' => ['from' => $fromDt->toDateString(), 'to' => $toDt->toDateString()],
-            'production_count' => $productions->count(),
+            'production_count' => $this->batchCount($productions),
             'total_cost' => round(array_sum(array_column($list, 'cost')), 2),
             'items' => $list,
         ];
@@ -490,5 +491,11 @@ class ReportService
         usort($rows, static fn (array $a, array $b): int => $b['quantity'] <=> $a['quantity']);
 
         return $rows;
+    }
+
+    /** Partiyalar soni: bir `batch_id` dagi qatorlar bitta hisoblanadi. */
+    private function batchCount($productions): int
+    {
+        return $productions->map(fn ($p) => $p->batch_id ?? $p->id)->unique()->count();
     }
 }

@@ -12,10 +12,12 @@ class RecipeResource extends JsonResource
         return [
             'id' => $this->id,
             'shop_id' => $this->shop_id,
+            'kind' => $this->kind ?? 'single',
             'name' => $this->name,
             'bread_category' => new BreadCategoryResource($this->whenLoaded('breadCategory')),
             'measurement_unit' => new MeasurementUnitResource($this->whenLoaded('measurementUnit')),
             'output_quantity' => $this->output_quantity,
+            'outputs' => RecipeOutputResource::collection($this->whenLoaded('outputs')),
             'is_active' => $this->is_active,
             'ingredients' => RecipeIngredientResource::collection($this->whenLoaded('recipeIngredients')),
             'total_cost' => $this->when($this->relationLoaded('recipeIngredients'), fn () => $this->totalCost()),

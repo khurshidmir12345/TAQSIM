@@ -14,7 +14,12 @@ class UpdateProductionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'batch_count' => ['required', 'numeric', 'min:0.1'],
+            // Eski ilova partiyadagi bitta qator ulushini yuborishi mumkin
+            // (masalan 0.05) — shuning uchun pastki chegara kichik.
+            'batch_count' => ['required', 'numeric', 'min:0.0001'],
+            'items' => ['sometimes', 'array', 'min:1', 'max:30'],
+            'items.*.bread_category_id' => ['required_with:items', 'uuid', 'distinct', 'exists:bread_categories,id'],
+            'items.*.quantity' => ['required_with:items', 'integer', 'min:0', 'max:10000000'],
         ];
     }
 }

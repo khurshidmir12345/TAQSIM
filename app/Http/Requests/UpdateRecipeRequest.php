@@ -3,11 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Models\MeasurementUnit;
+use App\Http\Requests\Concerns\ValidatesRecipeOutputs;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateRecipeRequest extends FormRequest
 {
+    use ValidatesRecipeOutputs;
+
     public function authorize(): bool
     {
         return true;
@@ -17,10 +20,12 @@ class UpdateRecipeRequest extends FormRequest
     {
         $shop = $this->route('shop');
         $recipe = $this->route('recipe');
+        $isMix = $recipe->isMix();
 
         return [
             'bread_category_id' => [
-                'sometimes',
+                // Aralash partiyada asosiy mahsulot yo'q.
+                $isMix ? 'prohibited' : 'sometimes',
                 'uuid',
                 Rule::exists('bread_categories', 'id')->where('shop_id', $shop->id),
                 // Joriy retseptni istisno qilamiz va soft-deleted yozuvlarni
@@ -49,6 +54,7 @@ class UpdateRecipeRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
             'ingredients' => ['sometimes', 'array', 'min:1'],
             'ingredients.*.ingredient_id' => ['required_with:ingredients', 'uuid', 'exists:ingredients,id'],
+            ...($isMix ? $this->mixOutputRules($shop, required: false) : ['outputs' => ['prohibited']]),
             'ingredients.*.quantity' => ['required_with:ingredients', 'numeric', 'min:0.001'],
         ];
     }

@@ -74,6 +74,10 @@ return [
     'recipe' => [
         'duplicate_bread_category' => 'Bu mahsulot turi uchun retsept allaqachon mavjud.',
     ],
+    'production' => [
+        'items_empty' => 'Kamida bitta mahsulot miqdorini kiriting.',
+        'item_has_returns' => 'Bu mahsulotga vozvrat yozilgan — uni partiyadan olib tashlab bo‘lmaydi. Avval vozvratni o‘chiring.',
+    ],
 
     'employees' => [
         'code_sent' => 'Tasdiqlash kodi xodim raqamiga yuborildi.',

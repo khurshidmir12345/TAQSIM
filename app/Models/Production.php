@@ -13,6 +13,7 @@ class Production extends Model
     protected $fillable = [
         'shop_id',
         'recipe_id',
+        'batch_id',
         'bread_category_id',
         'date',
         'batch_count',
@@ -27,11 +28,31 @@ class Production extends Model
     {
         return [
             'date' => 'date',
-            'batch_count' => 'decimal:2',
+            'batch_count' => 'decimal:4',
             'flour_used_kg' => 'decimal:2',
             'bread_produced' => 'integer',
             'ingredient_cost' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Shu partiyaning barcha qatorlari (bir partiyadan chiqqan mahsulotlar).
+     * Oddiy chiqimda — faqat o'zi.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Production>
+     */
+    public function batchRows(): \Illuminate\Database\Eloquent\Collection
+    {
+        if ($this->batch_id === null) {
+            return new \Illuminate\Database\Eloquent\Collection([$this]);
+        }
+
+        return static::query()
+            ->where('shop_id', $this->shop_id)
+            ->where('batch_id', $this->batch_id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
     }
 
     public function shop(): BelongsTo

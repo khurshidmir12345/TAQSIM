@@ -5,15 +5,35 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Requests\StoreProductionRequest;
 use App\Http\Requests\UpdateProductionRequest;
 use App\Http\Resources\ProductionResource;
+use App\Models\BreadCategory;
 use App\Models\Production;
 use App\Models\Recipe;
 use App\Models\Shop;
 use App\Services\ProductionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 class ProductionController extends BaseShopController
 {
+    private const RELATIONS = [
+        'breadCategory',
+        'recipe.breadCategory',
+        'recipe.measurementUnit',
+        'recipe.outputs.breadCategory',
+        'recipe.recipeIngredients.ingredient.measurementUnit',
+        'recipe.recipeIngredients.ingredient.currency',
+    ];
+
+    private const EMPTY_FINANCIALS = [
+        'returns_amount' => 0.0,
+        'returns_quantity_allocated' => 0,
+        'gross_revenue' => 0.0,
+        'net_revenue' => 0.0,
+        'net_profit' => 0.0,
+    ];
+
     public function __construct(
         private readonly ProductionService $productionService,
     ) {}
@@ -22,70 +42,28 @@ class ProductionController extends BaseShopController
     {
         $this->authorizeShop($request, $shop);
 
-        $query = $shop->productions()
-            ->with([
-                'breadCategory',
-                'recipe.breadCategory',
-                'recipe.measurementUnit',
-                'recipe.recipeIngredients.ingredient.measurementUnit',
-                'recipe.recipeIngredients.ingredient.currency',
-            ])
-            ->getQuery();
+        $query = $shop->productions()->with(self::RELATIONS)->getQuery();
 
         if ($request->has('date')) {
             $query->whereDate('date', $request->query('date'));
         }
 
         $this->applySorting($query, $request, 'date', 'desc');
-
-        $requestObj = $request;
+        // Bir partiyaning qatorlari ro'yxatda (va sahifalashda) yonma-yon tursin.
+        $query->orderByDesc('created_at')->orderBy('batch_id')->orderBy('id');
 
         if ($request->boolean('paginate', false)) {
             $perPage = min((int) $request->query('per_page', 20), 100);
             $paginator = $query->paginate($perPage);
-            $collection = $paginator->getCollection();
-            $financials = $this->productionService->financialsForProductions(
-                $shop,
-                $collection,
-                $request->query('date')
+            $paginator->setCollection(
+                $this->present($request, $shop, $paginator->getCollection(), $request->query('date'))
             );
-            $mapped = $collection->map(function ($p) use ($financials, $requestObj) {
-                return array_merge(
-                    (new ProductionResource($p))->toArray($requestObj),
-                    $financials[$p->id] ?? [
-                        'returns_amount' => 0.0,
-                        'returns_quantity_allocated' => 0,
-                        'gross_revenue' => 0.0,
-                        'net_revenue' => 0.0,
-                        'net_profit' => 0.0,
-                    ]
-                );
-            })->values();
-            $paginator->setCollection($mapped);
 
             return $this->paginated($paginator);
         }
 
-        $collection = $query->get();
-        $financials = $this->productionService->financialsForProductions(
-            $shop,
-            $collection,
-            $request->query('date')
-        );
-
         return $this->success([
-            'productions' => $collection->map(function ($p) use ($financials, $requestObj) {
-                return array_merge(
-                    (new ProductionResource($p))->toArray($requestObj),
-                    $financials[$p->id] ?? [
-                        'returns_amount' => 0.0,
-                        'returns_quantity_allocated' => 0,
-                        'gross_revenue' => 0.0,
-                        'net_revenue' => 0.0,
-                        'net_profit' => 0.0,
-                    ]
-                );
-            })->values(),
+            'productions' => $this->present($request, $shop, $query->get(), $request->query('date')),
         ]);
     }
 
@@ -94,28 +72,35 @@ class ProductionController extends BaseShopController
         $this->authorizeShop($request, $shop);
 
         $data = $request->validated();
-        $recipe = Recipe::with('recipeIngredients.ingredient')->findOrFail($data['recipe_id']);
-
+        $recipe = $this->shopRecipe($shop, $data['recipe_id']);
         $batchCount = (float) $data['batch_count'];
-        $ingredientCost = $this->productionService->calculateIngredientCost($recipe, $batchCount);
-        $breadProduced = $this->productionService->calculateBreadOutput($recipe, $batchCount);
-        $flourUsed = $this->productionService->calculateFlourUsed($recipe, $batchCount);
 
-        $production = $shop->productions()->create([
-            'recipe_id' => $recipe->id,
-            'bread_category_id' => $data['bread_category_id'],
-            'date' => $data['date'],
-            'batch_count' => $batchCount,
-            'flour_used_kg' => $flourUsed,
-            'bread_produced' => $breadProduced,
-            'ingredient_cost' => $ingredientCost,
-            'created_by' => $request->user()->id,
-        ]);
+        if (isset($data['items'])) {
+            $items = $this->itemsFromRequest($shop, $data['items']);
+        } elseif ($recipe->outputs->count() > 1) {
+            // Eski ilova bitta mahsulot yuboradi — partiya retseptning odatiy
+            // taqsimoti bo'yicha barcha mahsulotlarga yoziladi.
+            $items = $this->productionService->defaultItems($recipe, $batchCount);
+        } else {
+            $items = [
+                $data['bread_category_id'] => $this->productionService->calculateBreadOutput($recipe, $batchCount),
+            ];
+        }
 
-        $production->load(['breadCategory', 'recipe.breadCategory', 'recipe.measurementUnit']);
+        $rows = $this->productionService->saveBatch(
+            $shop,
+            $recipe,
+            $batchCount,
+            $items,
+            $data['date'],
+            $request->user()->id,
+        );
+
+        $rows->each->load(['breadCategory', 'recipe.breadCategory', 'recipe.measurementUnit', 'recipe.outputs.breadCategory']);
 
         return $this->created([
-            'production' => new ProductionResource($production),
+            'production' => new ProductionResource($rows->first()),
+            'productions' => ProductionResource::collection($rows),
         ]);
     }
 
@@ -127,48 +112,48 @@ class ProductionController extends BaseShopController
             abort(404);
         }
 
-        $recipe = Recipe::with('recipeIngredients.ingredient')->findOrFail($production->recipe_id);
+        $data = $request->validated();
+        $recipe = $this->shopRecipe($shop, $production->recipe_id, withTrashed: true);
+        $batchCount = (float) $data['batch_count'];
+        $existing = $production->batchRows();
 
-        $batchCount = (float) $request->validated()['batch_count'];
-        $ingredientCost = $this->productionService->calculateIngredientCost($recipe, $batchCount);
-        $breadProduced = $this->productionService->calculateBreadOutput($recipe, $batchCount);
-        $flourUsed = $this->productionService->calculateFlourUsed($recipe, $batchCount);
+        if (isset($data['items'])) {
+            $rows = $this->productionService->saveBatch(
+                $shop,
+                $recipe,
+                $batchCount,
+                $this->itemsFromRequest($shop, $data['items']),
+                $production->date->toDateString(),
+                $request->user()->id,
+                $existing,
+            );
+        } elseif ($production->batch_id === null && $recipe->outputs->count() <= 1) {
+            $rows = $this->productionService->saveBatch(
+                $shop,
+                $recipe,
+                $batchCount,
+                [$production->bread_category_id => $this->productionService->calculateBreadOutput($recipe, $batchCount)],
+                $production->date->toDateString(),
+                $request->user()->id,
+                $existing,
+            );
+        } else {
+            $this->productionService->rescaleRow($production, $recipe, $batchCount);
+            $rows = $production->batchRows();
+        }
 
-        $production->update([
-            'batch_count' => $batchCount,
-            'flour_used_kg' => $flourUsed,
-            'bread_produced' => $breadProduced,
-            'ingredient_cost' => $ingredientCost,
-        ]);
-
-        $production->refresh();
-        $production->load([
-            'breadCategory',
-            'recipe.breadCategory',
-            'recipe.measurementUnit',
-            'recipe.recipeIngredients.ingredient.measurementUnit',
-            'recipe.recipeIngredients.ingredient.currency',
-        ]);
-
-        $financials = $this->productionService->financialsForProductions(
-            $shop,
-            collect([$production]),
-            $production->date->toDateString()
-        );
-
-        $payload = array_merge(
-            (new ProductionResource($production))->toArray($request),
-            $financials[$production->id] ?? [
-                'returns_amount' => 0.0,
-                'returns_quantity_allocated' => 0,
-                'gross_revenue' => 0.0,
-                'net_revenue' => 0.0,
-                'net_profit' => 0.0,
-            ],
-        );
+        $rows = Production::query()
+            ->with(self::RELATIONS)
+            ->whereIn('id', $rows->pluck('id'))
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+        $presented = $this->present($request, $shop, $rows, $production->date->toDateString());
+        $self = $presented->firstWhere('id', $production->id) ?? $presented->first();
 
         return $this->success([
-            'production' => $payload,
+            'production' => $self,
+            'productions' => $presented,
         ]);
     }
 
@@ -180,8 +165,82 @@ class ProductionController extends BaseShopController
             abort(404);
         }
 
-        $production->delete();
+        // Har qator alohida o'chiriladi — observer kassadagi yozuvni ham olib tashlaydi.
+        $rows = $request->boolean('whole_batch') ? $production->batchRows() : collect([$production]);
+        foreach ($rows as $row) {
+            $row->delete();
+        }
 
         return $this->deleted();
+    }
+
+    private function shopRecipe(Shop $shop, string $recipeId, bool $withTrashed = false): Recipe
+    {
+        $query = Recipe::query()
+            ->with(['recipeIngredients.ingredient', 'outputs'])
+            ->where('shop_id', $shop->id);
+
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
+
+        return $query->findOrFail($recipeId);
+    }
+
+    /**
+     * @param  list<array{bread_category_id: string, quantity: int}>  $items
+     * @return array<string, int>
+     */
+    private function itemsFromRequest(Shop $shop, array $items): array
+    {
+        $map = [];
+        foreach ($items as $item) {
+            $map[$item['bread_category_id']] = (int) $item['quantity'];
+        }
+
+        $owned = BreadCategory::query()
+            ->where('shop_id', $shop->id)
+            ->whereIn('id', array_keys($map))
+            ->count();
+        if ($owned !== count($map)) {
+            throw ValidationException::withMessages([
+                'items' => __('validation.exists', ['attribute' => 'items']),
+            ]);
+        }
+
+        return $map;
+    }
+
+    /**
+     * Resurs + moliyaviy ko'rsatkichlar + partiya jamisi.
+     *
+     * @param  Collection<int, Production>  $rows
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function present(Request $request, Shop $shop, Collection $rows, ?string $date): Collection
+    {
+        $financials = $this->productionService->financialsForProductions($shop, $rows, $date);
+
+        $batchIds = $rows->pluck('batch_id')->filter()->unique()->values();
+        $totals = $batchIds->isEmpty()
+            ? collect()
+            : Production::query()
+                ->where('shop_id', $shop->id)
+                ->whereIn('batch_id', $batchIds)
+                ->groupBy('batch_id')
+                ->selectRaw('batch_id, SUM(batch_count) as total')
+                ->pluck('total', 'batch_id');
+
+        return $rows->map(function (Production $p) use ($request, $financials, $totals) {
+            return array_merge(
+                (new ProductionResource($p))->toArray($request),
+                $financials[$p->id] ?? self::EMPTY_FINANCIALS,
+                [
+                    'batch_total_count' => $p->batch_id !== null
+                        ? round((float) ($totals[$p->batch_id] ?? $p->batch_count), 4)
+                        : (float) $p->batch_count,
+                ],
+            );
+        })->values();
     }
 }

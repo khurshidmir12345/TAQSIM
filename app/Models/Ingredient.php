@@ -23,6 +23,7 @@ class Ingredient extends Model
         'currency_id',
         'sort_order',
         'is_active',
+        'stock_quantity',
     ];
 
     protected function casts(): array
@@ -33,6 +34,7 @@ class Ingredient extends Model
             'price_per_unit' => 'decimal:2',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
+            'stock_quantity' => 'decimal:3',
         ];
     }
 

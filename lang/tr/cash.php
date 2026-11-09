@@ -20,6 +20,7 @@ return [
         'outlet_payment' => 'Bayiden tahsilat',
         'production_income' => 'Ürün geliri',
         'production_cost' => 'Hammadde',
+        'ingredient_purchase' => 'Hammadde alımı',
         'return' => 'İade',
     ],
 

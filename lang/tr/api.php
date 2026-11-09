@@ -74,6 +74,10 @@ return [
         'item_has_returns' => 'Bu ürün için iade kaydı var — partiden çıkarılamaz. Önce iadeyi silin.',
     ],
 
+    'inventory' => [
+        'consumption_locked' => 'Bu tüketim bir üretim kaydından geliyor — o kaydı düzenleyin.',
+    ],
+
     'employees' => [
         'code_sent' => 'Doğrulama kodu çalışanın numarasına gönderildi.',
         'created' => 'Çalışan eklendi.',

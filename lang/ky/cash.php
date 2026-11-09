@@ -20,6 +20,7 @@ return [
         'outlet_payment' => 'Дүкөндөн түшүм',
         'production_income' => 'Продукция түшүмү',
         'production_cost' => 'Чийки зат',
+        'ingredient_purchase' => 'Чийки зат сатып алуу',
         'return' => 'Кайтарым',
     ],
 

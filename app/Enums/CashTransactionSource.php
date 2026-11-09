@@ -27,6 +27,9 @@ enum CashTransactionSource: string
     /** Do'kondan mahsulot qaytdi — nasiya shunchaga kamaydi (kirim). */
     case OutletReturn = 'outlet_return';
 
+    /** Xom ashyo ombori kirimi (xarid) — chiqim. */
+    case IngredientPurchase = 'ingredient_purchase';
+
     /** Foydalanuvchi tahrirlashi/o'chirishi mumkinmi. */
     public function isEditable(): bool
     {

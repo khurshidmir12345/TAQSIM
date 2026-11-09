@@ -31,6 +31,7 @@ class Shop extends Model
         'is_active',
         'cash_track_production',
         'production_without_recipe',
+        'inventory_started_at',
         'cash_track_returns',
         'cash_track_outlet_payments',
     ];
@@ -41,6 +42,7 @@ class Shop extends Model
             'is_active' => 'boolean',
             'cash_track_production' => 'boolean',
             'production_without_recipe' => 'boolean',
+            'inventory_started_at' => 'datetime',
             'cash_track_returns' => 'boolean',
             'cash_track_outlet_payments' => 'boolean',
             'latitude'  => 'float',
@@ -111,6 +113,25 @@ class Shop extends Model
     public function productions(): HasMany
     {
         return $this->hasMany(Production::class);
+    }
+
+    public function ingredientMovements(): HasMany
+    {
+        return $this->hasMany(IngredientMovement::class);
+    }
+
+    /**
+     * Shu chiqimning xom ashyosi ombordan yechiladimi (va puli kassaga
+     * yozilmaydimi): ombor yuritila boshlangandan keyin yaratilgan bo'lsa.
+     */
+    public function tracksInventoryFor(Production $production): bool
+    {
+        $start = $this->inventory_started_at;
+        if ($start === null || $production->recipe_id === null) {
+            return false;
+        }
+
+        return ($production->created_at ?? now())->greaterThanOrEqualTo($start);
     }
 
     public function breadReturns(): HasMany

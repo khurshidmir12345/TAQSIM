@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\ExpenseCategoryController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\GoogleAuthController;
 use App\Http\Controllers\Api\V1\IngredientController;
+use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\MeasurementUnitController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OnboardingController;
@@ -137,6 +138,14 @@ Route::prefix('v1')->group(function () {
                 Route::delete('measurement-units/{unit}', [ShopBatchUnitController::class, 'destroy']);
             });
             Route::put('production-settings', [ShopController::class, 'updateProductionSettings']);
+            // ── Xom ashyo ombori ─────────────────────────────────────
+            Route::prefix('inventory')->middleware('shop.perm:manage_recipes')->group(function () {
+                Route::get('/', [InventoryController::class, 'index']);
+                Route::get('movements', [InventoryController::class, 'movements']);
+                Route::post('purchases', [InventoryController::class, 'storePurchase']);
+                Route::post('adjustments', [InventoryController::class, 'storeAdjustment']);
+                Route::delete('movements/{movement}', [InventoryController::class, 'destroyMovement']);
+            });
             Route::apiResource('productions', ProductionController::class)
                 ->only(['index', 'store', 'update', 'destroy'])
                 ->middleware('shop.perm:manage_production');

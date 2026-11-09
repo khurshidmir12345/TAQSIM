@@ -41,6 +41,7 @@ class ShopResource extends JsonResource
             'features'         => $this->whenPivotLoaded('user_shops', fn () => $this->resolveFeatures()),
             // «Mahsulot chiqdi»da retseptsiz mahsulotlar ham ko'rinsinmi.
             'production_without_recipe' => (bool) $this->production_without_recipe,
+            'inventory_started_at' => $this->inventory_started_at,
             'created_at'       => $this->created_at,
         ];
     }

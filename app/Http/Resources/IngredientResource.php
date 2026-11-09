@@ -30,6 +30,8 @@ class IngredientResource extends JsonResource
             'currency' => $this->currency
                 ? new CurrencyResource($this->currency)
                 : null,
+            // Ombordagi qoldiq (ombor yuritilmasa 0).
+            'stock_quantity' => (float) $this->stock_quantity,
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,

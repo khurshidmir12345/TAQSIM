@@ -20,6 +20,7 @@ return [
         'outlet_payment' => 'Дўкондан тушум',
         'production_income' => 'Маҳсулот тушуми',
         'production_cost' => 'Хом ашё',
+        'ingredient_purchase' => 'Хом ашё харид',
         'return' => 'Возврат',
     ],
 

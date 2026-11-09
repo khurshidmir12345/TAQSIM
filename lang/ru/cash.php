@@ -20,6 +20,7 @@ return [
         'outlet_payment' => 'Оплата от магазина',
         'production_income' => 'Выручка от продукции',
         'production_cost' => 'Сырьё',
+        'ingredient_purchase' => 'Закупка сырья',
         'return' => 'Возврат',
     ],
 

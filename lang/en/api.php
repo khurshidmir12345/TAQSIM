@@ -77,6 +77,10 @@ return [
         'item_has_returns' => 'This product has a return recorded — it can\'t be removed from the batch. Delete the return first.',
     ],
 
+    'inventory' => [
+        'consumption_locked' => 'This usage comes from a production entry — edit that entry instead.',
+    ],
+
     'employees' => [
         'code_sent' => 'Verification code sent to the employee phone number.',
         'created' => 'Employee added.',

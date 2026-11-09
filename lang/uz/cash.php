@@ -20,6 +20,7 @@ return [
         'outlet_payment' => 'Do‘kondan tushum',
         'production_income' => 'Mahsulot tushumi',
         'production_cost' => 'Xom ashyo',
+        'ingredient_purchase' => 'Xom ashyo xaridi',
         'return' => 'Vozvrat',
     ],
 

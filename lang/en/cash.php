@@ -20,6 +20,7 @@ return [
         'outlet_payment' => 'Payment from outlet',
         'production_income' => 'Product revenue',
         'production_cost' => 'Ingredients',
+        'ingredient_purchase' => 'Ingredient purchase',
         'return' => 'Returns',
     ],
 

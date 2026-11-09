@@ -20,6 +20,7 @@ return [
         'outlet_payment' => 'Пардохт аз мағоза',
         'production_income' => 'Даромади маҳсулот',
         'production_cost' => 'Ашёи хом',
+        'ingredient_purchase' => 'Хариди ашёи хом',
         'return' => 'Баргардонӣ',
     ],
 

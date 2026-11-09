@@ -6,6 +6,7 @@ use App\Enums\CashTransactionSource;
 use App\Enums\CashTransactionType;
 use App\Models\BreadReturn;
 use App\Models\CashTransaction;
+use App\Models\IngredientMovement;
 use App\Enums\OutletEntryType;
 use App\Models\OutletEntry;
 use App\Models\Production;
@@ -36,6 +37,41 @@ class CashMirrorService
 
     public const CATEGORY_OUTLET_CREDIT_REDUCED = 'outlet_credit_reduced';
 
+    public const CATEGORY_INGREDIENT_PURCHASE = 'ingredient_purchase';
+
+    /**
+     * Xom ashyo xaridi — kassadan haqiqiy pul chiqimi. Do'kon sozlamasidan
+     * qat'i nazar yoziladi: bu foydalanuvchining o'zi kiritgan pul harakati.
+     */
+    public function syncIngredientPurchase(IngredientMovement $movement): void
+    {
+        $shop = $movement->shop()->first();
+        if (! $shop instanceof Shop) {
+            return;
+        }
+        $movement->loadMissing('ingredient.measurementUnit');
+        $ing = $movement->ingredient;
+        $unit = $ing?->measurementUnit?->code ?? ($ing?->unit?->value ?? '');
+        $qty = rtrim(rtrim(number_format((float) $movement->quantity, 3, '.', ''), '0'), '.');
+
+        $this->put(
+            $shop,
+            CashTransactionType::Expense,
+            CashTransactionSource::IngredientPurchase,
+            $movement->id,
+            self::CATEGORY_INGREDIENT_PURCHASE,
+            (float) $movement->total_amount,
+            $movement->date,
+            $movement->created_by,
+            trim(($ing?->name ?? '') . " · {$qty} {$unit}"),
+        );
+    }
+
+    public function forgetIngredientPurchase(IngredientMovement $movement): void
+    {
+        $this->forget(CashTransactionSource::IngredientPurchase, $movement->id);
+    }
+
     public function syncProduction(Production $production): void
     {
         $shop = $production->shop;
@@ -50,7 +86,11 @@ class CashMirrorService
 
         $income = (float) $production->bread_produced
             * (float) ($production->breadCategory?->selling_price ?? 0);
-        $cost = (float) $production->ingredient_cost;
+        // Ombor yuritilsa xom ashyo puli xarid paytida kassaga yozilgan —
+        // chiqimda qayta yozilsa ikki marta ayrilib qolardi.
+        $cost = $shop->tracksInventoryFor($production)
+            ? 0.0
+            : (float) $production->ingredient_cost;
 
         $this->put(
             $shop,

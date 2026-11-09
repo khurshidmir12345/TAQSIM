@@ -79,6 +79,10 @@ return [
         'item_has_returns' => 'Bu mahsulotga vozvrat yozilgan — uni partiyadan olib tashlab bo‘lmaydi. Avval vozvratni o‘chiring.',
     ],
 
+    'inventory' => [
+        'consumption_locked' => 'Sarf mahsulot chiqimidan kelgan — uni chiqimni tahrirlab o‘zgartiring.',
+    ],
+
     'employees' => [
         'code_sent' => 'Tasdiqlash kodi xodim raqamiga yuborildi.',
         'created' => 'Xodim qo‘shildi.',

@@ -125,6 +125,25 @@ class ShopController extends Controller
         ], __('api.updated'));
     }
 
+    /**
+     * «Mahsulot chiqdi» sozlamalari (faqat egasi). Hozircha bitta:
+     * retseptsiz mahsulotlarni ham chiqim qilish.
+     */
+    public function updateProductionSettings(Request $request, Shop $shop): JsonResponse
+    {
+        $this->authorizeShop($request, $shop, ownerOnly: true);
+
+        $data = $request->validate([
+            'without_recipe' => ['required', 'boolean'],
+        ]);
+
+        $shop->update(['production_without_recipe' => $data['without_recipe']]);
+
+        return $this->success([
+            'without_recipe' => (bool) $shop->production_without_recipe,
+        ], __('api.updated'));
+    }
+
     public function destroy(Request $request, Shop $shop): JsonResponse
     {
         $this->authorizeShop($request, $shop, ownerOnly: true);

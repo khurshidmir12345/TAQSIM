@@ -72,6 +72,18 @@ class ProductionController extends BaseShopController
         $this->authorizeShop($request, $shop);
 
         $data = $request->validated();
+
+        if (empty($data['recipe_id'])) {
+            $rows = $this->productionService->saveDirect(
+                $shop,
+                $this->itemsFromRequest($shop, $data['items']),
+                $data['date'],
+                $request->user()->id,
+            );
+
+            return $this->created($this->createdPayload($rows));
+        }
+
         $recipe = $this->shopRecipe($shop, $data['recipe_id']);
         $batchCount = (float) $data['batch_count'];
 
@@ -96,12 +108,21 @@ class ProductionController extends BaseShopController
             $request->user()->id,
         );
 
+        return $this->created($this->createdPayload($rows));
+    }
+
+    /**
+     * @param  Collection<int, Production>  $rows
+     * @return array<string, mixed>
+     */
+    private function createdPayload(Collection $rows): array
+    {
         $rows->each->load(['breadCategory', 'recipe.breadCategory', 'recipe.measurementUnit', 'recipe.outputs.breadCategory']);
 
-        return $this->created([
+        return [
             'production' => new ProductionResource($rows->first()),
             'productions' => ProductionResource::collection($rows),
-        ]);
+        ];
     }
 
     public function update(UpdateProductionRequest $request, Shop $shop, Production $production): JsonResponse
@@ -113,6 +134,50 @@ class ProductionController extends BaseShopController
         }
 
         $data = $request->validated();
+
+        if ($production->recipe_id === null) {
+            if (! isset($data['items'])) {
+                throw ValidationException::withMessages([
+                    'items' => __('validation.required', ['attribute' => 'items']),
+                ]);
+            }
+            $rows = $this->productionService->saveDirect(
+                $shop,
+                $this->itemsFromRequest($shop, $data['items']),
+                $production->date->toDateString(),
+                $request->user()->id,
+                $production,
+            );
+        } else {
+            if (! isset($data['batch_count'])) {
+                throw ValidationException::withMessages([
+                    'batch_count' => __('validation.required', ['attribute' => 'batch_count']),
+                ]);
+            }
+            $rows = $this->updateRecipeBatch($request, $shop, $production, $data);
+        }
+
+        $rows = Production::query()
+            ->with(self::RELATIONS)
+            ->whereIn('id', $rows->pluck('id'))
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+        $presented = $this->present($request, $shop, $rows, $production->date->toDateString());
+        $self = $presented->firstWhere('id', $production->id) ?? $presented->first();
+
+        return $this->success([
+            'production' => $self,
+            'productions' => $presented,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return Collection<int, Production>
+     */
+    private function updateRecipeBatch(Request $request, Shop $shop, Production $production, array $data): Collection
+    {
         $recipe = $this->shopRecipe($shop, $production->recipe_id, withTrashed: true);
         $batchCount = (float) $data['batch_count'];
         $existing = $production->batchRows();
@@ -142,19 +207,7 @@ class ProductionController extends BaseShopController
             $rows = $production->batchRows();
         }
 
-        $rows = Production::query()
-            ->with(self::RELATIONS)
-            ->whereIn('id', $rows->pluck('id'))
-            ->orderBy('created_at')
-            ->orderBy('id')
-            ->get();
-        $presented = $this->present($request, $shop, $rows, $production->date->toDateString());
-        $self = $presented->firstWhere('id', $production->id) ?? $presented->first();
-
-        return $this->success([
-            'production' => $self,
-            'productions' => $presented,
-        ]);
+        return $rows;
     }
 
     public function destroy(Request $request, Shop $shop, Production $production): JsonResponse

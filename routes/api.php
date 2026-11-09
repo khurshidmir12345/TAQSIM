@@ -136,6 +136,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('measurement-units', [ShopBatchUnitController::class, 'store']);
                 Route::delete('measurement-units/{unit}', [ShopBatchUnitController::class, 'destroy']);
             });
+            Route::put('production-settings', [ShopController::class, 'updateProductionSettings']);
             Route::apiResource('productions', ProductionController::class)
                 ->only(['index', 'store', 'update', 'destroy'])
                 ->middleware('shop.perm:manage_production');

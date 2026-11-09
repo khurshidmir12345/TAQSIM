@@ -39,6 +39,8 @@ class ShopResource extends JsonResource
             // Muddat bo'yicha ochiq bo'limlar. `permissions` roldan kelib
             // chiqadi, bu esa hisob muddatidan — ikkalasi mustaqil.
             'features'         => $this->whenPivotLoaded('user_shops', fn () => $this->resolveFeatures()),
+            // «Mahsulot chiqdi»da retseptsiz mahsulotlar ham ko'rinsinmi.
+            'production_without_recipe' => (bool) $this->production_without_recipe,
             'created_at'       => $this->created_at,
         ];
     }

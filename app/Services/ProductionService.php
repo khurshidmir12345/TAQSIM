@@ -205,6 +205,68 @@ class ProductionService
     }
 
     /**
+     * Retseptsiz chiqim: har mahsulot alohida qator, xom ashyo xarajati va un
+     * sarfi nol. [$existing] berilsa — o'sha qator yangilanadi (bitta mahsulot).
+     *
+     * @param  array<string, int>  $items  bread_category_id => miqdor
+     * @return Collection<int, Production>
+     */
+    public function saveDirect(
+        Shop $shop,
+        array $items,
+        string $date,
+        string $userId,
+        ?Production $existing = null,
+    ): Collection {
+        $items = array_filter(
+            array_map('intval', $items),
+            fn (int $q) => $q > 0
+        );
+
+        if ($items === [] || ($existing !== null && count($items) !== 1)) {
+            throw ValidationException::withMessages([
+                'items' => __('api.production.items_empty'),
+            ]);
+        }
+
+        return DB::transaction(function () use ($shop, $items, $date, $userId, $existing) {
+            $saved = collect();
+            foreach ($items as $catId => $qty) {
+                $row = [
+                    'recipe_id' => null,
+                    'batch_id' => null,
+                    'bread_category_id' => (string) $catId,
+                    'bread_produced' => $qty,
+                    'batch_count' => 0,
+                    'ingredient_cost' => 0,
+                    'flour_used_kg' => 0,
+                ];
+
+                if ($existing !== null) {
+                    if ($existing->bread_category_id !== (string) $catId
+                        && BreadReturn::query()->where('production_id', $existing->id)->exists()) {
+                        throw ValidationException::withMessages([
+                            'items' => __('api.production.item_has_returns'),
+                        ]);
+                    }
+                    $existing->fill($row)->save();
+                    $saved->push($existing);
+
+                    continue;
+                }
+
+                $saved->push(Production::create($row + [
+                    'shop_id' => $shop->id,
+                    'date' => $date,
+                    'created_by' => $userId,
+                ]));
+            }
+
+            return $saved;
+        });
+    }
+
+    /**
      * Eski ilova versiyasi partiyadagi bitta qatorning sonini o'zgartirsa —
      * faqat o'sha qator mutanosib o'zgaradi (mahsulot miqdori, xarajat, un).
      */

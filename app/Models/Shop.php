@@ -30,6 +30,7 @@ class Shop extends Model
         'longitude',
         'is_active',
         'cash_track_production',
+        'production_without_recipe',
         'cash_track_returns',
         'cash_track_outlet_payments',
     ];
@@ -39,6 +40,7 @@ class Shop extends Model
         return [
             'is_active' => 'boolean',
             'cash_track_production' => 'boolean',
+            'production_without_recipe' => 'boolean',
             'cash_track_returns' => 'boolean',
             'cash_track_outlet_payments' => 'boolean',
             'latitude'  => 'float',

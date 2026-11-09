@@ -32,6 +32,7 @@ class IngredientResource extends JsonResource
                 : null,
             // Ombordagi qoldiq (ombor yuritilmasa 0).
             'stock_quantity' => (float) $this->stock_quantity,
+            'min_stock' => $this->min_stock !== null ? (float) $this->min_stock : null,
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,

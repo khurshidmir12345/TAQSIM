@@ -24,6 +24,8 @@ class Ingredient extends Model
         'sort_order',
         'is_active',
         'stock_quantity',
+        'min_stock',
+        'low_notified_at',
     ];
 
     protected function casts(): array
@@ -35,6 +37,8 @@ class Ingredient extends Model
             'sort_order' => 'integer',
             'is_active' => 'boolean',
             'stock_quantity' => 'decimal:3',
+            'min_stock' => 'decimal:3',
+            'low_notified_at' => 'datetime',
         ];
     }
 

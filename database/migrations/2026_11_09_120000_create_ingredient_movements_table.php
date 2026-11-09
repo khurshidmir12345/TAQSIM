@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Schema;
  * - `ingredient_movements`: har bir harakat — kirim (xarid), sarf (mahsulot
  *   chiqimi), tuzatish (sanash). Miqdor ishorali: kirim +, sarf −.
  * - `ingredients.stock_quantity`: harakatlar yig'indisi (tez o'qish uchun).
+ * - `ingredients.min_stock`, `low_notified_at`: «kam qoldi» ogohlantirishi.
  * - `shops.inventory_started_at`: ombor yuritila boshlangan payt. Undan keyingi
  *   chiqimlarda xom ashyo puli kassaga yozilmaydi — pul xarid paytida yozilgan.
  */
@@ -37,6 +38,11 @@ return new class extends Migration
 
         Schema::table('ingredients', function (Blueprint $table) {
             $table->decimal('stock_quantity', 15, 3)->default(0);
+            // Ixtiyoriy: shundan kam qolsa ogohlantirish. NULL — sarf
+            // tezligidan avtomatik (2 kunga yetmasa).
+            $table->decimal('min_stock', 15, 3)->nullable();
+            // «Kam qoldi» xabari yuborilgan payt; qoldiq tiklansa tozalanadi.
+            $table->timestamp('low_notified_at')->nullable();
         });
 
         Schema::table('shops', function (Blueprint $table) {
@@ -47,7 +53,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('ingredient_movements');
-        Schema::table('ingredients', fn (Blueprint $t) => $t->dropColumn('stock_quantity'));
+        Schema::table('ingredients', fn (Blueprint $t) => $t->dropColumn(['stock_quantity', 'min_stock', 'low_notified_at']));
         Schema::table('shops', fn (Blueprint $t) => $t->dropColumn('inventory_started_at'));
     }
 };

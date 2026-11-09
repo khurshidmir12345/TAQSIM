@@ -21,6 +21,11 @@ return [
         ],
     ],
 
+    'low_stock' => [
+        'title' => 'Hammadde azaldı',
+        'body' => ':shop — :items azaldı. Stok eklemeyi unutmayın.',
+    ],
+
     'order_reminder' => [
         'title' => 'Bugünkü siparişler',
         'body' => ':shop — bugün :count sipariş teslim edilmeli.',

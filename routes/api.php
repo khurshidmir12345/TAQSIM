@@ -145,6 +145,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('purchases', [InventoryController::class, 'storePurchase']);
                 Route::post('adjustments', [InventoryController::class, 'storeAdjustment']);
                 Route::delete('movements/{movement}', [InventoryController::class, 'destroyMovement']);
+                Route::put('ingredients/{ingredient}/min-stock', [InventoryController::class, 'updateMinStock']);
             });
             Route::apiResource('productions', ProductionController::class)
                 ->only(['index', 'store', 'update', 'destroy'])

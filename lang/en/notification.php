@@ -21,6 +21,11 @@ return [
         ],
     ],
 
+    'low_stock' => [
+        'title' => 'Running low on ingredients',
+        'body' => ':shop — running low: :items. Time to restock.',
+    ],
+
     'order_reminder' => [
         'title' => 'Today’s orders',
         'body' => ':shop — :count order(s) to deliver today.',

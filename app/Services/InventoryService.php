@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\IngredientMovementType;
+use App\Jobs\SendLowStockAlert;
 use App\Models\Ingredient;
 use App\Models\IngredientMovement;
 use App\Models\Production;
@@ -23,6 +24,12 @@ use Illuminate\Validation\ValidationException;
  */
 class InventoryService
 {
+    /** O'rtacha sarf shuncha kun bo'yicha hisoblanadi. */
+    public const USAGE_WINDOW_DAYS = 14;
+
+    /** Avtomatik chegara: shundan kam kunga yetsa — «kam qoldi». */
+    public const LOW_DAYS = 2;
+
     public function __construct(
         private readonly CashMirrorService $mirror,
     ) {}
@@ -64,6 +71,7 @@ class InventoryService
             $ingredient->price_per_unit = round($newPrice, 2);
             $ingredient->save();
             $this->recalc([$ingredient->id]);
+            $this->checkLow($shop, [$ingredient->id]);
 
             $this->mirror->syncIngredientPurchase($movement->setRelation('ingredient', $ingredient));
 
@@ -101,6 +109,7 @@ class InventoryService
                 'created_by' => $userId,
             ]);
             $this->recalc([$ingredient->id]);
+            $this->checkLow($shop, [$ingredient->id]);
 
             return $movement;
         });
@@ -120,6 +129,9 @@ class InventoryService
             $ingredientId = $movement->ingredient_id;
             $movement->delete();
             $this->recalc([$ingredientId]);
+            if ($movement->shop) {
+                $this->checkLow($movement->shop, [$ingredientId]);
+            }
         });
     }
 
@@ -168,6 +180,92 @@ class InventoryService
         }
 
         $this->recalc($touched);
+        $this->checkLow($shop, $touched);
+    }
+
+    /**
+     * Har xom ashyo uchun o'rtacha kunlik sarf, necha kunga yetishi va
+     * «kam qoldi» belgisi.
+     *
+     * @return array<string, array{daily_usage: float, days_left: float|null, is_low: bool}>
+     */
+    public function stockStats(Shop $shop, ?array $ingredientIds = null): array
+    {
+        $since = now()->subDays(self::USAGE_WINDOW_DAYS - 1)->toDateString();
+        $usage = IngredientMovement::query()
+            ->where('shop_id', $shop->id)
+            ->where('type', IngredientMovementType::Consumption->value)
+            ->whereDate('date', '>=', $since)
+            ->when($ingredientIds !== null, fn ($q) => $q->whereIn('ingredient_id', $ingredientIds))
+            ->groupBy('ingredient_id')
+            ->selectRaw('ingredient_id, -SUM(quantity) as used')
+            ->pluck('used', 'ingredient_id');
+
+        $ingredients = Ingredient::query()
+            ->where('shop_id', $shop->id)
+            ->when($ingredientIds !== null, fn ($q) => $q->whereIn('id', $ingredientIds))
+            ->get(['id', 'stock_quantity', 'min_stock']);
+
+        $out = [];
+        foreach ($ingredients as $i) {
+            $daily = (float) ($usage[$i->id] ?? 0) / self::USAGE_WINDOW_DAYS;
+            $stock = (float) $i->stock_quantity;
+            $daysLeft = $daily > 0 ? max(0.0, $stock) / $daily : null;
+            $isLow = $i->min_stock !== null
+                ? $stock <= (float) $i->min_stock
+                : ($daysLeft !== null && $daysLeft < self::LOW_DAYS);
+
+            $out[$i->id] = [
+                'daily_usage' => round($daily, 3),
+                'days_left' => $daysLeft !== null ? round($daysLeft, 1) : null,
+                'is_low' => $isLow,
+            ];
+        }
+
+        return $out;
+    }
+
+    public function setMinStock(Ingredient $ingredient, ?float $minStock): void
+    {
+        $ingredient->update(['min_stock' => $minStock]);
+        if ($ingredient->shop) {
+            $this->checkLow($ingredient->shop, [$ingredient->id]);
+        }
+    }
+
+    /**
+     * Yangi «kam qoldi» holatiga tushganlar uchun bitta xabar; qoldiq
+     * tiklanganlarda belgi tozalanadi — keyingi safar yana xabar beriladi.
+     *
+     * @param  list<string>  $ingredientIds
+     */
+    private function checkLow(Shop $shop, array $ingredientIds): void
+    {
+        $ids = array_values(array_unique(array_filter($ingredientIds)));
+        if ($ids === [] || $shop->inventory_started_at === null) {
+            return;
+        }
+
+        $stats = $this->stockStats($shop, $ids);
+        $fresh = [];
+        $recovered = [];
+        $notified = Ingredient::query()->whereIn('id', $ids)->pluck('low_notified_at', 'id');
+
+        foreach ($stats as $id => $st) {
+            if ($st['is_low'] && $notified[$id] === null) {
+                $fresh[] = $id;
+            } elseif (! $st['is_low'] && $notified[$id] !== null) {
+                $recovered[] = $id;
+            }
+        }
+
+        if ($recovered !== []) {
+            Ingredient::query()->whereIn('id', $recovered)->update(['low_notified_at' => null]);
+        }
+        if ($fresh !== []) {
+            Ingredient::query()->whereIn('id', $fresh)->update(['low_notified_at' => now()]);
+            SendLowStockAlert::dispatch($shop->id, $fresh)->afterCommit();
+        }
     }
 
     public function forgetProduction(Production $production): void

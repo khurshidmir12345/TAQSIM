@@ -18,6 +18,9 @@ enum NotificationCategory: string
     /** "Bugun zakaz bor" eslatmalari. */
     case OrderReminder = 'order_reminder';
 
+    /** Xom ashyo omborda kam qoldi. */
+    case LowStock = 'low_stock';
+
     /** Biznesga yangi xodim qo'shildi. */
     case EmployeeAdded = 'employee_added';
 
@@ -36,7 +39,7 @@ enum NotificationCategory: string
     public function isOptional(): bool
     {
         return match ($this) {
-            self::DailyGreeting, self::OrderReminder => true,
+            self::DailyGreeting, self::OrderReminder, self::LowStock => true,
             default => false,
         };
     }

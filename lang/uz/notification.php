@@ -21,6 +21,11 @@ return [
         ],
     ],
 
+    'low_stock' => [
+        'title' => 'Xom ashyo kam qoldi',
+        'body' => ':shop — :items kam qoldi. Kirim qilishni unutmang.',
+    ],
+
     'order_reminder' => [
         'title' => 'Bugungi zakazlar',
         'body' => ':shop — bugun :count ta zakaz yetkazib berilishi kerak.',

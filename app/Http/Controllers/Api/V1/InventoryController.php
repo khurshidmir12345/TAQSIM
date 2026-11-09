@@ -35,12 +35,18 @@ class InventoryController extends BaseShopController
         $value = $ingredients->sum(
             fn (Ingredient $i) => max(0, (float) $i->stock_quantity) * (float) $i->price_per_unit
         );
+        $stats = $this->inventory->stockStats($shop);
+
+        $items = $ingredients->map(fn (Ingredient $i) => array_merge(
+            (new IngredientResource($i))->toArray($request),
+            $stats[$i->id] ?? ['daily_usage' => 0, 'days_left' => null, 'is_low' => false],
+        ))->values();
 
         return $this->success([
             'started_at' => $shop->inventory_started_at,
             'total_value' => round($value, 2),
-            'low_count' => $ingredients->filter(fn (Ingredient $i) => (float) $i->stock_quantity <= 0)->count(),
-            'ingredients' => IngredientResource::collection($ingredients),
+            'low_count' => $items->where('is_low', true)->count(),
+            'ingredients' => $items,
         ]);
     }
 
@@ -131,6 +137,25 @@ class InventoryController extends BaseShopController
         );
 
         return $this->success($this->payload($request, $movement, $ingredient));
+    }
+
+    /** Ixtiyoriy minimal qoldiq (NULL — avtomatik, sarf tezligidan). */
+    public function updateMinStock(Request $request, Shop $shop, Ingredient $ingredient): JsonResponse
+    {
+        $this->authorizeShop($request, $shop);
+        abort_if($ingredient->shop_id !== $shop->id, 404);
+
+        $data = $request->validate([
+            'min_stock' => ['present', 'nullable', 'numeric', 'min:0', 'max:100000000'],
+        ]);
+        $this->inventory->setMinStock(
+            $ingredient,
+            $data['min_stock'] !== null ? (float) $data['min_stock'] : null,
+        );
+
+        return $this->success([
+            'ingredient' => new IngredientResource($ingredient->fresh(['currency', 'measurementUnit'])),
+        ]);
     }
 
     public function destroyMovement(Request $request, Shop $shop, IngredientMovement $movement): JsonResponse

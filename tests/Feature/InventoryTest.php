@@ -178,4 +178,48 @@ class InventoryTest extends TestCase
         $this->assertSame(0, CashTransaction::query()
             ->where('source', CashTransactionSource::IngredientPurchase->value)->count());
     }
+
+    public function test_low_stock_flags_and_notifies_once(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $this->actingAs($this->owner)->postJson($this->url('inventory/purchases'), [
+            'ingredient_id' => $this->un->id, 'quantity' => 200, 'total_amount' => 1200000,
+        ])->assertCreated();
+
+        $this->actingAs($this->owner)
+            ->putJson($this->url("inventory/ingredients/{$this->un->id}/min-stock"), ['min_stock' => 120])
+            ->assertOk()->assertJsonPath('data.ingredient.min_stock', 120);
+
+        $this->produce(1); // 150 kg qoldi — hali yetarli
+        \Illuminate\Support\Facades\Queue::assertNothingPushed();
+
+        $this->produce(1); // 100 kg — kam qoldi
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\SendLowStockAlert::class, 1);
+
+        $this->produce(0.5); // hali ham kam — qayta xabar yo'q
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\SendLowStockAlert::class, 1);
+
+        $this->actingAs($this->owner)->getJson($this->url('inventory'))
+            ->assertOk()
+            ->assertJsonPath('data.low_count', 1)
+            ->assertJsonPath('data.ingredients.0.is_low', true);
+
+        // Kirim — tiklandi, keyingi safar yana xabar beriladi.
+        $this->actingAs($this->owner)->postJson($this->url('inventory/purchases'), [
+            'ingredient_id' => $this->un->id, 'quantity' => 100, 'total_amount' => 600000,
+        ])->assertCreated();
+        $this->assertNull($this->un->fresh()->low_notified_at);
+    }
+
+    public function test_low_stock_alert_job_creates_notification_for_owner(): void
+    {
+        (new \App\Jobs\SendLowStockAlert($this->shop->id, [$this->un->id]))
+            ->handle(app(\App\Services\NotificationService::class));
+
+        $this->assertDatabaseHas('app_notifications', [
+            'user_id' => $this->owner->id,
+            'category' => 'low_stock',
+        ]);
+    }
 }
